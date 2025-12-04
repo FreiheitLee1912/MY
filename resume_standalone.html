@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>李 仲凱 - Resume</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: #fff;
+            color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .resume-container {
+            width: 100%;
+            max-width: 1200px;
+            background: #fff;
+            padding: 3rem;
+        }
+
+        .resume-header {
+            text-align: left;
+            margin-bottom: 3rem;
+            border-bottom: 4px solid #000;
+            padding-bottom: 2rem;
+        }
+
+        .name-line {
+            margin-bottom: 1rem;
+        }
+
+        .resume-header h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 0;
+            color: #000;
+            letter-spacing: -0.02em;
+            text-transform: uppercase;
+            line-height: 1.1;
+            display: inline-block;
+            margin-right: 1.5rem;
+        }
+
+        .en-name {
+            font-size: 1.8rem;
+            font-weight: 400;
+            color: #525252;
+            margin: 0;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: inline-block;
+            vertical-align: baseline;
+            line-height: 1.1;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            color: #2563eb;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .contact-info {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .contact-info span {
+            font-size: 0.95rem;
+            color: #000;
+            padding: 0.5rem 1rem;
+            border: 1px solid #000;
+            font-weight: 500;
+        }
+
+        .resume-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 3rem;
+        }
+
+        .resume-section {
+            margin-bottom: 2.5rem;
+        }
+
+        .resume-section h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            color: #000;
+            border-bottom: 2px solid #000;
+            padding-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .summary p {
+            line-height: 1.8;
+            color: #000;
+            font-size: 1rem;
+        }
+
+        .job-entry,
+        .edu-entry {
+            margin-bottom: 2rem;
+            page-break-inside: avoid;
+        }
+
+        .job-entry h3,
+        .edu-entry h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 0.5rem;
+        }
+
+        .role {
+            font-size: 1rem;
+            color: #2563eb;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border-left: 3px solid #2563eb;
+            padding-left: 1rem;
+        }
+
+        .job-entry h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #000;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .job-entry ul,
+        .edu-entry ul {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .job-entry li,
+        .edu-entry li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+            line-height: 1.6;
+            color: #000;
+        }
+
+        .job-entry li::before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: #2563eb;
+            font-weight: bold;
+        }
+
+        .skill-category {
+            margin-bottom: 1.5rem;
+            page-break-inside: avoid;
+        }
+
+        .skill-category h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 0.75rem;
+        }
+
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag {
+            padding: 0.4rem 0.8rem;
+            border: 1px solid #000;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #000;
+        }
+
+        .achievement-list {
+            list-style: none;
+        }
+
+        .achievement-list li {
+            margin-bottom: 0.75rem;
+            padding-left: 1.5rem;
+            position: relative;
+            line-height: 1.6;
+            color: #000;
+        }
+
+        .achievement-list li::before {
+            content: "●";
+            position: absolute;
+            left: 0;
+            color: #2563eb;
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+
+            body {
+                width: 210mm;
+                height: auto;
+                padding: 0;
+            }
+
+            .resume-container {
+                width: 100%;
+                max-width: none;
+                padding: 0;
+                margin: 0;
+            }
+
+            .job-entry,
+            .edu-entry,
+            .skill-category {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="resume-container">
+        <header class="resume-header">
+            <div class="name-line">
+                <h1>李 仲凱</h1>
+                <p class="en-name">RI CHUGAI</p>
+            </div>
+            <p class="subtitle">Supply Chain & ERP Consultant | PMO | Data Analyst</p>
+            <div class="contact-info">
+                <span>TOEIC 845</span>
+                <span>AWS Cloud Practitioner</span>
+                <span>簿記3級</span>
+            </div>
+        </header>
+
+        <div class="resume-grid">
+            <div class="left-column">
+                <section class="resume-section summary">
+                    <h2>SUMMARY</h2>
+                    <p>
+                        メーカー（アシックス、小林製薬）での調達・開発・生産管理の実務経験を経て、アクセンチュアにてSCM・ERP領域のコンサルタントとして活躍。
+                        製造業における上流のIT戦略策定から、S/4HANA導入、BPR、PMO業務まで幅広い経験を有します。
+                        グローバルプロジェクトでのファシリテーションや、Python/VBAを用いた業務効率化も得意としています。
+                    </p>
+                </section>
+
+                <section class="resume-section experience">
+                    <h2>EXPERIENCE</h2>
+
+                    <div class="job-entry">
+                        <h3>Accenture Japan Ltd.</h3>
+                        <p class="role">IT Consultant / PMO | 2021.06 - Present</p>
+
+                        <h4>タイヤメーカー向け全体管理PJ (2025.03 - Present)</h4>
+                        <ul>
+                            <li><strong>全体導入戦略支援・プログラム管理:</strong> ERP導入に向けた全体進捗、マスタスケジュールの策定、課題管理を担当。</li>
+                            <li><strong>経理・財務領域調整:</strong> 経理・財務領域をはじめとするERP跨ぎのプロジェクト調整を実施。</li>
+                            <li><strong>課題解決:</strong> マスタスケジュール変更フローを策定し、意思決定フローを明確化。経理・財務側の予算予実課題のDeep Diveに参画し解決に寄与。
+                            </li>
+                        </ul>
+
+                        <h4>電機メーカー向けERP導入プロジェクト・SCM領域 (2024.03 - 2025.02)</h4>
+                        <ul>
+                            <li><strong>SCM領域支援:</strong> 海外販社ERP導入に向け、データ要件収集、データクレンジング、マスタ/トランデータ定義を実施。</li>
+                            <li><strong>PMO・販社移行リーダー:</strong> プロジェクト進捗・課題管理、タスク優先順位設定、スケジュール遵守を確保。</li>
+                            <li><strong>成果:</strong> 正確なデータ移行を実現し、データドリブンダッシュボードを構築して週次報告をリアルタイム化。</li>
+                        </ul>
+
+                        <h4>総合電機メーカー向けSAP導入プロジェクト (2022.07 - 2024.03)</h4>
+                        <ul>
+                            <li><strong>SAP基幹ERP導入支援:</strong> 業務分析、IT分析、分社IT戦略策定、導入スケジュール管理。</li>
+                            <li><strong>PMO・分社移行リーダー:</strong> 進捗管理および課題管理を実施し、予定よりも効率的に導入支援フェーズを進行。</li>
+                        </ul>
+
+                        <h4>医療機器メーカー向けERP導入におけるリソース分析 (2021.11 - 2022.03)</h4>
+                        <ul>
+                            <li><strong>リソース分析・改善提案:</strong> S4HANA導入に際し、リソース分析とベンダーパフォーマンスマネジメント戦略を立案。</li>
+                            <li><strong>成果:</strong> プロジェクト課題を共有し、次期契約プロジェクト全体のコストダウンに寄与。</li>
+                        </ul>
+                    </div>
+
+                    <div class="job-entry">
+                        <h3>Kobayashi Pharmaceutical Co., Ltd.</h3>
+                        <p class="role">Procurement Group | 2020.05 - 2021.05</p>
+                        <ul>
+                            <li><strong>購買発注・在庫管理:</strong> 日用品（OEM）、ヘルスケア商品、薬品の購買管理、在庫管理、納期管理を担当。</li>
+                            <li><strong>原価低減:</strong> 既存仕入先ロット変更、発注比率変更、価格交渉などを行い、個人年間約1,000万円のコストダウンを達成。</li>
+                            <li><strong>海外貿易業務:</strong> 海外販社との貿易業務、原料資材の購買・発注管理を担当。</li>
+                            <li><strong>業務改善:</strong> 本社機能を発揮し、業務フローの策定と改善を実施。</li>
+                        </ul>
+                    </div>
+
+                    <div class="job-entry">
+                        <h3>ASICS Corporation</h3>
+                        <p class="role">Apparel Development & Production | 2013.04 - 2020.04</p>
+                        <ul>
+                            <li><strong>開発生産 (2018.01 - 2020.04):</strong>
+                                テニス・陸上などの製品開発、生産管理。2020オリンピック・世界陸上向け選手用機能素材・製品の開発を担当。</li>
+                            <li><strong>システム導入推進:</strong> 社内PLMシステム導入の推進役として、海外販社でのトレーニングやGO LIVE立会いを実施。業務可視化を実現。</li>
+                            <li><strong>サスティナブル推進:</strong> サプライヤーから新素材情報を収集し、環境配慮型製品開発に繋げた。</li>
+                            <li><strong>アパレル素材企画 (2013.04 - 2017.12):</strong>
+                                素材企画立案、発注先選定、品質管理、原価低減。素材サプライヤーを30社から15社に集約し、供給体制を最適化。</li>
+                        </ul>
+                    </div>
+                </section>
+            </div>
+
+            <div class="right-column">
+                <section class="resume-section skills">
+                    <h2>SKILLS</h2>
+                    <div class="skill-category">
+                        <h3>Domain Expertise</h3>
+                        <div class="skill-tags">
+                            <span class="tag">Supply Chain Management</span>
+                            <span class="tag">Procurement</span>
+                            <span class="tag">Production Management</span>
+                            <span class="tag">ERP Implementation</span>
+                            <span class="tag">BPR</span>
+                        </div>
+                    </div>
+
+                    <div class="skill-category">
+                        <h3>Technical</h3>
+                        <div class="skill-tags">
+                            <span class="tag">SAP S/4HANA</span>
+                            <span class="tag">Python</span>
+                            <span class="tag">VBA</span>
+                            <span class="tag">PLM</span>
+                            <span class="tag">AWS</span>
+                        </div>
+                    </div>
+
+                    <div class="skill-category">
+                        <h3>Management</h3>
+                        <div class="skill-tags">
+                            <span class="tag">PMO</span>
+                            <span class="tag">Team Leadership</span>
+                            <span class="tag">Vendor Management</span>
+                            <span class="tag">Global Communication</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="resume-section education">
+                    <h2>EDUCATION</h2>
+                    <div class="edu-entry">
+                        <h3>Bachelor's Degree</h3>
+                        <p>University Name (Please Update)</p>
+                        <p class="date">2009 - 2013</p>
+                    </div>
+                </section>
+
+                <section class="resume-section achievements">
+                    <h2>ACHIEVEMENTS</h2>
+                    <ul class="achievement-list">
+                        <li><strong>Cost Reduction:</strong> Achieved ~10M JPY annual cost reduction at Kobayashi
+                            Pharmaceutical.</li>
+                        <li><strong>Olympic Development:</strong> Developed functional products for 2020 Tokyo Olympics
+                            athletes.</li>
+                        <li><strong>System Implementation:</strong> Successfully led PLM system rollout to global
+                            subsidiaries at Asics.</li>
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
