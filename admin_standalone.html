@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Admin - Standalone</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .admin-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #111827;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            background: none;
+            -webkit-text-fill-color: initial;
+        }
+
+        h2 {
+            color: #374151;
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #4b5563;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.1rem;
+            margin-top: 2rem;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-success {
+            background-color: #10b981;
+            margin-top: 1rem;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+        }
+
+        .array-item {
+            background: #f9fafb;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .remove-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+
+        .add-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .help-text {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        .info-box {
+            background: #dbeafe;
+            border-left: 4px solid #2563eb;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            border-radius: 4px;
+        }
+
+        .info-box p {
+            color: #1e40af;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <h1>📝 Resume Builder Admin</h1>
+
+        <div class="info-box">
+            <p><strong>使用说明：</strong> 填写下面的表单，点击"生成简历"按钮即可在新标签页中查看您的简历。简历会自动保存在浏览器中。</p>
+        </div>
+
+        <form id="resumeForm">
+            <!-- Personal Info -->
+            <h2>个人信息 Personal Information</h2>
+            <div class="form-group">
+                <label>姓名（日文/中文）Name (Kanji)</label>
+                <input type="text" id="name" name="name" placeholder="例：李 仲凱">
+            </div>
+            <div class="form-group">
+                <label>姓名（英文）Name (English)</label>
+                <input type="text" id="name_en" name="name_en" placeholder="例：RI CHUGAI">
+            </div>
+            <div class="form-group">
+                <label>职位/角色 Title / Role</label>
+                <input type="text" id="title" name="title" placeholder="例：Supply Chain Consultant">
+            </div>
+            <div class="form-group">
+                <label>联系方式/证书 Contact / Certifications (用逗号分隔)</label>
+                <input type="text" id="contact" name="contact" placeholder="例：TOEIC 845, AWS Cloud Practitioner">
+            </div>
+
+            <!-- Summary -->
+            <h2>个人简介 Summary</h2>
+            <div class="form-group">
+                <label>专业简介 Professional Summary</label>
+                <textarea id="summary" name="summary" placeholder="请输入您的专业简介..."></textarea>
+            </div>
+
+            <!-- Experience -->
+            <h2>工作经历 Work Experience</h2>
+            <div id="experience-list"></div>
+            <button type="button" class="add-btn" onclick="addExperienceItem()">+ 添加工作经历</button>
+
+            <!-- Skills -->
+            <h2>技能 Skills</h2>
+            <div class="form-group">
+                <label>领域专长 Domain Expertise (用逗号分隔)</label>
+                <input type="text" id="skills_domain" name="skills_domain" placeholder="例：Supply Chain Management, ERP">
+            </div>
+            <div class="form-group">
+                <label>技术技能 Technical Skills (用逗号分隔)</label>
+                <input type="text" id="skills_tech" name="skills_tech" placeholder="例：SAP, Python, AWS">
+            </div>
+            <div class="form-group">
+                <label>管理技能 Management Skills (用逗号分隔)</label>
+                <input type="text" id="skills_mgmt" name="skills_mgmt" placeholder="例：PMO, Team Leadership">
+            </div>
+
+            <!-- Education -->
+            <h2>教育背景 Education</h2>
+            <div class="form-group">
+                <label>学位和学校 Degree & University</label>
+                <input type="text" id="edu_degree" name="edu_degree"
+                    placeholder="例：Bachelor's Degree, Tokyo University">
+            </div>
+            <div class="form-group">
+                <label>年份 Years</label>
+                <input type="text" id="edu_date" name="edu_date" placeholder="例：2009 - 2013">
+            </div>
+
+            <!-- Achievements -->
+            <h2>成就 Achievements</h2>
+            <div class="form-group">
+                <label>成就列表 List Items (每行一项)</label>
+                <textarea id="achievements" name="achievements"
+                    placeholder="例：&#10;Cost Reduction: Achieved 10M JPY savings&#10;Olympic Project: Developed products for 2020 Olympics"></textarea>
+            </div>
+
+            <button type="button" class="btn-primary" onclick="generateResume()">🚀 生成简历 Generate Resume</button>
+            <button type="button" class="btn-primary btn-success" onclick="downloadHTML()">💾 下载HTML文件 Download
+                HTML</button>
+        </form>
+    </div>
+
+    <script>
+        // Default Data
+        const defaultData = {
+            name: "李 仲凱",
+            nameEn: "RI CHUGAI",
+            title: "Supply Chain & ERP Consultant | PMO | Data Analyst",
+            contact: "TOEIC 845, AWS Cloud Practitioner, 簿記3級",
+            summary: "メーカー（アシックス、小林製薬）での調達・開発・生産管理の実務経験を経て、アクセンチュアにてSCM・ERP領域のコンサルタントとして活躍。製造業における上流のIT戦略策定から、S/4HANA導入、BPR、PMO業務まで幅広い経験を有します。グローバルプロジェクトでのファシリテーションや、Python/VBAを用いた業務効率化も得意としています。",
+            experience: [
+                {
+                    company: "Accenture Japan Ltd.",
+                    role: "IT Consultant / PMO | 2021.06 - Present",
+                    details: `<h4>タイヤメーカー向け全体管理PJ (2025.03 - Present)</h4>
+<ul>
+    <li><strong>全体導入戦略支援・プログラム管理:</strong> ERP導入に向けた全体進捗、マスタスケジュールの策定、課題管理を担当。</li>
+    <li><strong>経理・財務領域調整:</strong> 経理・財務領域をはじめとするERP跨ぎのプロジェクト調整を実施。</li>
+</ul>`
+                }
+            ],
+            skills: {
+                domain: "Supply Chain Management, Procurement, Production Management, ERP Implementation, BPR",
+                tech: "SAP S/4HANA, Python, VBA, PLM, AWS",
+                mgmt: "PMO, Team Leadership, Vendor Management, Global Communication"
+            },
+            education: {
+                degree: "Bachelor's Degree\nUniversity Name",
+                date: "2009 - 2013"
+            },
+            achievements: "Cost Reduction: Achieved ~10M JPY annual cost reduction at Kobayashi Pharmaceutical.\nOlympic Development: Developed functional products for 2020 Tokyo Olympics athletes."
+        };
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAdminData();
+        });
+
+        function loadAdminData() {
+            const data = JSON.parse(localStorage.getItem('resumeData')) || defaultData;
+
+            document.getElementById('name').value = data.name;
+            document.getElementById('name_en').value = data.nameEn || "";
+            document.getElementById('title').value = data.title;
+            document.getElementById('contact').value = data.contact;
+            document.getElementById('summary').value = data.summary;
+
+            document.getElementById('skills_domain').value = data.skills.domain;
+            document.getElementById('skills_tech').value = data.skills.tech;
+            document.getElementById('skills_mgmt').value = data.skills.mgmt;
+
+            document.getElementById('edu_degree').value = data.education.degree;
+            document.getElementById('edu_date').value = data.education.date;
+
+            document.getElementById('achievements').value = data.achievements;
+
+            const expContainer = document.getElementById('experience-list');
+            expContainer.innerHTML = '';
+            data.experience.forEach(exp => addExperienceItem(exp));
+        }
+
+        function addExperienceItem(data = { company: '', role: '', details: '' }) {
+            const container = document.getElementById('experience-list');
+            const div = document.createElement('div');
+            div.className = 'array-item';
+            div.innerHTML = `
+                <div class="form-group">
+                    <label>公司名称 Company</label>
+                    <input type="text" class="exp-company" value="${data.company}">
+                </div>
+                <div class="form-group">
+                    <label>职位和日期 Role & Date</label>
+                    <input type="text" class="exp-role" value="${data.role}">
+                </div>
+                <div class="form-group">
+                    <label>详细描述 Details (支持HTML)</label>
+                    <textarea class="exp-details">${data.details}</textarea>
+                </div>
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">删除 Remove</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function collectFormData() {
+            const experienceItems = [];
+            document.querySelectorAll('#experience-list .array-item').forEach(item => {
+                experienceItems.push({
+                    company: item.querySelector('.exp-company').value,
+                    role: item.querySelector('.exp-role').value,
+                    details: item.querySelector('.exp-details').value
+                });
+            });
+
+            return {
+                name: document.getElementById('name').value,
+                nameEn: document.getElementById('name_en').value,
+                title: document.getElementById('title').value,
+                contact: document.getElementById('contact').value,
+                summary: document.getElementById('summary').value,
+                experience: experienceItems,
+                skills: {
+                    domain: document.getElementById('skills_domain').value,
+                    tech: document.getElementById('skills_tech').value,
+                    mgmt: document.getElementById('skills_mgmt').value
+                },
+                education: {
+                    degree: document.getElementById('edu_degree').value,
+                    date: document.getElementById('edu_date').value
+                },
+                achievements: document.getElementById('achievements').value
+            };
+        }
+
+        function generateResume() {
+            const data = collectFormData();
+            localStorage.setItem('resumeData', JSON.stringify(data));
+
+            // Generate HTML content
+            const html = generateResumeHTML(data);
+
+            // Open in new window
+            const newWindow = window.open('', '_blank');
+            newWindow.document.write(html);
+            newWindow.document.close();
+        }
+
+        function downloadHTML() {
+            const data = collectFormData();
+            localStorage.setItem('resumeData', JSON.stringify(data));
+
+            const html = generateResumeHTML(data);
+
+            // Create blob and download
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            link.download = `Resume_${data.nameEn || 'Export'}_${timestamp}.html`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            alert('✅ HTML文件已下载！您可以将此文件上传到Google Drive或其他平台分享。');
+        }
+
+        function generateResumeHTML(data) {
+            const experienceHTML = data.experience.map(exp => `
+                <div class="job-entry">
+                    <h3>${exp.company}</h3>
+                    <p class="role">${exp.role}</p>
+                    ${exp.details}
+                </div>
+            `).join('');
+
+            const achievementsHTML = data.achievements.split('\n').filter(a => a.trim()).map(a => {
+                const parts = a.split(':');
+                if (parts.length > 1) {
+                    return `<li><strong>${parts[0]}:</strong>${parts.slice(1).join(':')}</li>`;
+                }
+                return `<li>${a}</li>`;
+            }).join('');
+
+            return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${data.name} - Resume</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', 'Noto Sans JP', sans-serif; background-color: #fff; color: #000; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 2rem; }
+        .resume-container { width: 100%; max-width: 1200px; background: #fff; padding: 3rem; }
+        .resume-header { text-align: left; margin-bottom: 3rem; border-bottom: 4px solid #000; padding-bottom: 2rem; }
+        .name-line { margin-bottom: 1rem; }
+        .resume-header h1 { font-size: 3.5rem; font-weight: 800; margin-bottom: 0; color: #000; letter-spacing: -0.02em; text-transform: uppercase; line-height: 1.1; display: inline-block; margin-right: 1.5rem; }
+        .en-name { font-size: 1.8rem; font-weight: 400; color: #525252; margin: 0; letter-spacing: 0.1em; text-transform: uppercase; display: inline-block; vertical-align: baseline; line-height: 1.1; }
+        .subtitle { font-size: 1.25rem; color: #2563eb; font-weight: 600; margin-bottom: 1rem; }
+        .contact-info { display: flex; gap: 2rem; flex-wrap: wrap; }
+        .contact-info span { font-size: 0.95rem; color: #000; padding: 0.5rem 1rem; border: 1px solid #000; font-weight: 500; }
+        .resume-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 3rem; }
+        .resume-section { margin-bottom: 2.5rem; }
+        .resume-section h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 1.5rem; color: #000; border-bottom: 2px solid #000; padding-bottom: 0.5rem; letter-spacing: 0.05em; }
+        .summary p { line-height: 1.8; color: #000; font-size: 1rem; }
+        .job-entry, .edu-entry { margin-bottom: 2rem; page-break-inside: avoid; }
+        .job-entry h3, .edu-entry h3 { font-size: 1.25rem; font-weight: 700; color: #000; margin-bottom: 0.5rem; }
+        .role { font-size: 1rem; color: #2563eb; font-weight: 600; margin-bottom: 1rem; border-left: 3px solid #2563eb; padding-left: 1rem; }
+        .job-entry h4 { font-size: 1rem; font-weight: 600; color: #000; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .job-entry ul, .edu-entry ul { list-style: none; margin-left: 0; }
+        .job-entry li, .edu-entry li { margin-bottom: 0.5rem; padding-left: 1.5rem; position: relative; line-height: 1.6; color: #000; }
+        .job-entry li::before { content: "▸"; position: absolute; left: 0; color: #2563eb; font-weight: bold; }
+        .skill-category { margin-bottom: 1.5rem; page-break-inside: avoid; }
+        .skill-category h3 { font-size: 1rem; font-weight: 700; color: #000; margin-bottom: 0.75rem; }
+        .skill-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .tag { padding: 0.4rem 0.8rem; border: 1px solid #000; font-size: 0.85rem; font-weight: 500; color: #000; }
+        .achievement-list { list-style: none; }
+        .achievement-list li { margin-bottom: 0.75rem; padding-left: 1.5rem; position: relative; line-height: 1.6; color: #000; }
+        .achievement-list li::before { content: "●"; position: absolute; left: 0; color: #2563eb; }
+        @media print { @page { size: A4; margin: 10mm; } body { width: 210mm; height: auto; padding: 0; } .resume-container { width: 100%; max-width: none; padding: 0; margin: 0; } .job-entry, .edu-entry, .skill-category { page-break-inside: avoid; } }
+    </style>
+</head>
+<body>
+    <div class="resume-container">
+        <header class="resume-header">
+            <div class="name-line">
+                <h1>${data.name}</h1>
+                <p class="en-name">${data.nameEn}</p>
+            </div>
+            <p class="subtitle">${data.title}</p>
+            <div class="contact-info">
+                ${data.contact.split(',').map(c => `<span>${c.trim()}</span>`).join('')}
+            </div>
+        </header>
+        <div class="resume-grid">
+            <div class="left-column">
+                <section class="resume-section summary">
+                    <h2>SUMMARY</h2>
+                    <p>${data.summary}</p>
+                </section>
+                <section class="resume-section experience">
+                    <h2>EXPERIENCE</h2>
+                    ${experienceHTML}
+                </section>
+            </div>
+            <div class="right-column">
+                <section class="resume-section skills">
+                    <h2>SKILLS</h2>
+                    <div class="skill-category">
+                        <h3>Domain Expertise</h3>
+                        <div class="skill-tags">
+                            ${data.skills.domain.split(',').map(s => `<span class="tag">${s.trim()}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="skill-category">
+                        <h3>Technical</h3>
+                        <div class="skill-tags">
+                            ${data.skills.tech.split(',').map(s => `<span class="tag">${s.trim()}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="skill-category">
+                        <h3>Management</h3>
+                        <div class="skill-tags">
+                            ${data.skills.mgmt.split(',').map(s => `<span class="tag">${s.trim()}</span>`).join('')}
+                        </div>
+                    </div>
+                </section>
+                <section class="resume-section education">
+                    <h2>EDUCATION</h2>
+                    <div class="edu-entry">
+                        <h3>Bachelor's Degree</h3>
+                        <p>${data.education.degree.replace(/\n/g, '<br>')}</p>
+                        <p class="date">${data.education.date}</p>
+                    </div>
+                </section>
+                <section class="resume-section achievements">
+                    <h2>ACHIEVEMENTS</h2>
+                    <ul class="achievement-list">
+                        ${achievementsHTML}
+                    </ul>
+                </section>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+        }
+    </script>
+</body>
+
+</html>
