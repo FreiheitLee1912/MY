@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Chart Generator - CSV to PPT</title>
+    <meta name="description" content="Convert Jira CSV exports to beautiful Gantt charts suitable for PowerPoint presentations">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header" id="app-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                            <rect x="5" y="13" width="8" height="2" rx="1" fill="currentColor"/>
+                            <rect x="7" y="17" width="10" height="2" rx="1" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="app-title">Gantt Chart Generator</h1>
+                        <p class="app-subtitle">CSV → PPT-Ready Gantt Chart</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-ghost" id="btn-toggle-theme" title="Toggle Theme">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                            <line x1="1" y1="12" x2="3" y2="12"/>
+                            <line x1="21" y1="12" x2="23" y2="12"/>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="upload-section" id="upload-section">
+                <div class="upload-card glass-card">
+                    <div class="upload-icon-wrapper">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17 8 12 3 7 8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                    </div>
+                    <h2>CSVファイルをアップロード</h2>
+                    <p class="upload-desc">Jiraエクスポートの CSV ファイルをドラッグ＆ドロップ、またはクリックして選択</p>
+                    <div class="drop-zone" id="drop-zone">
+                        <input type="file" id="file-input" accept=".csv" multiple hidden>
+                        <div class="drop-zone-content">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            <span>ファイルを選択 (.csv)</span>
+                        </div>
+                    </div>
+                    <div class="loaded-files" id="loaded-files"></div>
+                </div>
+            </section>
+
+            <!-- Controls Section -->
+            <section class="controls-section hidden" id="controls-section">
+                <div class="controls-bar glass-card">
+                    <div class="controls-left">
+                        <div class="control-group">
+                            <label for="project-select">プロジェクト:</label>
+                            <select id="project-select" class="control-select">
+                                <option value="all">すべて</option>
+                            </select>
+                        </div>
+                        <div class="control-group">
+                            <label for="view-mode">表示:</label>
+                            <div class="view-toggle" id="view-mode">
+                                <button class="view-btn active" data-view="month">月</button>
+                                <button class="view-btn" data-view="quarter">四半期</button>
+                                <button class="view-btn" data-view="year">年</button>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label for="group-by">グループ:</label>
+                            <select id="group-by" class="control-select">
+                                <option value="type">タイプ別</option>
+                                <option value="parent">親タスク別</option>
+                                <option value="none">なし</option>
+                            </select>
+                        </div>
+                        <div class="control-divider"></div>
+                        <div class="control-group">
+                            <label>PPT期間:</label>
+                            <input type="date" id="timeline-start" class="control-input" title="開始日">
+                            <span class="control-separator">〜</span>
+                            <input type="date" id="timeline-end" class="control-input" title="終了日">
+                            <button class="btn btn-ghost btn-sm" id="btn-reset-range" title="リセット">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="1 4 1 10 7 10"/>
+                                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="controls-right">
+                        <button class="btn btn-primary" id="btn-export-png">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                            </svg>
+                            PNG出力
+                        </button>
+                        <button class="btn btn-accent" id="btn-export-pptx">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            PPTX出力
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gantt Chart Section -->
+            <section class="gantt-section hidden" id="gantt-section">
+                <div class="gantt-wrapper" id="gantt-wrapper">
+                    <div class="gantt-container" id="gantt-container">
+                        <!-- Left panel: Task labels -->
+                        <div class="gantt-labels" id="gantt-labels"></div>
+                        <!-- Right panel: Timeline -->
+                        <div class="gantt-timeline-wrapper" id="gantt-timeline-wrapper">
+                            <div class="gantt-timeline-header" id="gantt-timeline-header"></div>
+                            <div class="gantt-timeline-body" id="gantt-timeline-body"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Today marker legend -->
+                <div class="gantt-legend" id="gantt-legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: var(--milestone-color)"></span>
+                        <span>Milestone</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: var(--goal-color)"></span>
+                        <span>Goal</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: var(--review-color)"></span>
+                        <span>Review</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: var(--event-color)"></span>
+                        <span>Event</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: var(--task-color)"></span>
+                        <span>Task</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: var(--validation-color)"></span>
+                        <span>Validation/PPAP</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-today"></span>
+                        <span>Today</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
