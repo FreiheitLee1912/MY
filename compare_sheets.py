@@ -46,7 +46,7 @@ def values_equal(a, b):
         return False
 
 
-def compare_sheets(file_path, output_dir):
+def compare_sheets(file_path):
     print(f"Loading {file_path}...")
     wb_vals = openpyxl.load_workbook(file_path, data_only=True)
     wb_styles = openpyxl.load_workbook(file_path)
@@ -126,9 +126,10 @@ def compare_sheets(file_path, output_dir):
     for i in range(1, len(headers) + 1):
         ws_sum.column_dimensions[get_column_letter(i)].width = 25
 
-    # 6. Save
+    # 6. Save next to the original file as a "_copy"
+    base, _ = os.path.splitext(file_path)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
-    output_path = os.path.join(output_dir, f"compare_result_{timestamp}.xlsx")
+    output_path = f"{base}_copy_{timestamp}.xlsx"
     wb_styles.save(output_path)
 
     added = len(n_data.keys() - o_data.keys())
@@ -140,12 +141,12 @@ def compare_sheets(file_path, output_dir):
 
 if __name__ == "__main__":
     input_dir = r'C:\Users\dc13691\Desktop\Compare\Input'
-    output_dir = r'C:\Users\dc13691\Desktop\Compare\Output'
 
-    os.makedirs(output_dir, exist_ok=True)
     files = glob.glob(os.path.join(input_dir, '*.xlsx'))
+    # Skip previously generated copies so we don't compare a result file
+    files = [f for f in files if '_copy' not in os.path.basename(f).lower()]
     if not files:
         print(f"No .xlsx files found in {input_dir}")
     else:
         latest = max(files, key=os.path.getmtime)
-        compare_sheets(latest, output_dir)
+        compare_sheets(latest)
