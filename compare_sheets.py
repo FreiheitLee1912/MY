@@ -18,6 +18,27 @@ GREEN_FILL = PatternFill(start_color='90EE90', end_color='90EE90', fill_type='so
 HEADER_FILL = PatternFill(start_color='4472C4', end_color='4472C4', fill_type='solid')
 HEADER_FONT = Font(bold=True, color='FFFFFF')
 
+# Extra context columns pulled from the source row into the Summary
+EXTRA_COLS = ['NAMEPLATE', 'PROGRAM', 'TYPE1', 'TYPE2', 'IMFQ']
+
+
+def header_index_map(headers, names):
+    """Return {name: idx} for requested column names (idx=None if missing)."""
+    lookup = {str(h).strip(): i for i, h in enumerate(headers) if h is not None}
+    return {name: lookup.get(name) for name in names}
+
+
+def extract_extras(vals, idx_map):
+    """Pull extra-column values from a row, in EXTRA_COLS order."""
+    out = []
+    for name in EXTRA_COLS:
+        i = idx_map[name]
+        if i is not None and i < len(vals) and vals[i] is not None:
+            out.append(vals[i])
+        else:
+            out.append('')
+    return out
+
 
 def extract_rows(sheet):
     """Return {key: (row_idx, [cell_values])} for data rows."""
@@ -65,6 +86,9 @@ def compare_sheets(file_path, output_dir):
     n_data = extract_rows(n_vals)
     o_data = extract_rows(o_vals)
 
+    n_extra_idx = header_index_map(n_headers, EXTRA_COLS)
+    o_extra_idx = header_index_map(o_headers, EXTRA_COLS)
+
     diff_list = []
 
     # 1. New columns in N -> Green
@@ -76,22 +100,25 @@ def compare_sheets(file_path, output_dir):
     # 2. Added rows (in N, not in O) -> Yellow
     print("Highlighting added rows (Yellow)...")
     for key in n_data.keys() - o_data.keys():
-        r_idx, _ = n_data[key]
+        r_idx, vals = n_data[key]
         fill_row(n_styles, r_idx, len(n_headers), YELLOW_FILL)
-        diff_list.append(['Added', key, 'Whole Row', '(Missing in O)', 'Present in N'])
+        extras = extract_extras(vals, n_extra_idx)
+        diff_list.append(['Added', key, *extras, 'Whole Row', '(Missing in O)', 'Present in N'])
 
     # 3. Removed rows (in O, not in N) -> Grey
     print("Highlighting removed rows (Grey)...")
     for key in o_data.keys() - n_data.keys():
-        r_idx, _ = o_data[key]
+        r_idx, vals = o_data[key]
         fill_row(o_styles, r_idx, len(o_headers), GREY_FILL)
-        diff_list.append(['Removed', key, 'Whole Row', 'Present in O', '(Missing in N)'])
+        extras = extract_extras(vals, o_extra_idx)
+        diff_list.append(['Removed', key, *extras, 'Whole Row', 'Present in O', '(Missing in N)'])
 
     # 4. Changed values -> Orange
     print("Highlighting changed values (Orange)...")
     for key in n_data.keys() & o_data.keys():
         r_idx_n, vals_n = n_data[key]
         _, vals_o = o_data[key]
+        extras = extract_extras(vals_n, n_extra_idx)
         for c_idx in range(KEY_COL_IDX + 1, len(vals_n)):
             v_n = vals_n[c_idx]
             v_o = vals_o[c_idx] if c_idx < len(vals_o) else None
@@ -100,7 +127,7 @@ def compare_sheets(file_path, output_dir):
             n_styles.cell(row=r_idx_n, column=c_idx + 1).fill = ORANGE_FILL
             so = "" if v_o is None else str(v_o).strip()
             sn = "" if v_n is None else str(v_n).strip()
-            diff_list.append(['Changed', key, str(n_headers[c_idx]), so, sn])
+            diff_list.append(['Changed', key, *extras, str(n_headers[c_idx]), so, sn])
 
     # 5. Summary sheet
     print("Writing Summary sheet...")
@@ -108,7 +135,7 @@ def compare_sheets(file_path, output_dir):
         del wb_styles['Summary']
     ws_sum = wb_styles.create_sheet('Summary', 0)
 
-    headers = ['Type', 'Line No', 'Field', 'Old Value (O)', 'New Value (N)']
+    headers = ['Type', 'Line No', *EXTRA_COLS, 'Field', 'Old Value (O)', 'New Value (N)']
     for i, h in enumerate(headers, start=1):
         c = ws_sum.cell(row=1, column=i, value=h)
         c.fill = HEADER_FILL
