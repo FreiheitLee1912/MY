@@ -671,11 +671,12 @@ async function captureGanttImage() {
 }
 
 async function generatePPTXInBrowser(tasks, title, filename) {
-    if (typeof pptxgen === 'undefined') {
+    const PptxConstructor = window.PptxGenJS || window.pptxgen || window.pptxgenjs;
+    if (!PptxConstructor) {
         throw new Error('pptxgenjs is not loaded.');
     }
 
-    const pptx = new pptxgen();
+    const pptx = new PptxConstructor();
     pptx.layout = 'LAYOUT_WIDE';
     pptx.author = 'Gantt Chart Generator';
     pptx.subject = 'CSV Gantt export';
