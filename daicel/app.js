@@ -729,6 +729,92 @@ async function captureGanttImage() {
     }
 }
 
+const PPT_COLORS = {
+    white: 'FFFFFF',
+    black: '000000',
+    bgGray: 'F8F9FB',
+    grid: 'EEEEEE',
+    navy: '1F3D6E',
+    title: '1F2937',
+    muted: '6B7280',
+    lightBlue: 'BDD7EE',
+    today: 'EF4444',
+    defaultBar: '6B7280',
+};
+
+const PPT_TYPE_COLORS = {
+    'Milestone': 'F59E0B',
+    'Goal': '10B981',
+    'Review': '8B5CF6',
+    'Event': 'EC4899',
+    'Task': '3B82F6',
+    'Sub task': '06B6D4',
+    'Validation': 'EF4444',
+    'SOP': '84CC16',
+    'PPAP': 'F97316',
+    'Certificate': '3B82F6',
+    'Top-level initiative': '3B82F6',
+};
+
+function hexToRgb(hex) {
+    const clean = hex.replace('#', '');
+    return [
+        parseInt(clean.slice(0, 2), 16),
+        parseInt(clean.slice(2, 4), 16),
+        parseInt(clean.slice(4, 6), 16),
+    ];
+}
+
+function mixHex(hex, weight = 0.2) {
+    const [r, g, b] = hexToRgb(hex);
+    const mix = v => Math.min(255, Math.round(v * weight + 255 * (1 - weight)));
+    return [mix(r), mix(g), mix(b)].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
+
+function monthStart(date) {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function addMonths(date, count) {
+    return new Date(date.getFullYear(), date.getMonth() + count, 1);
+}
+
+function daysBetween(start, end) {
+    return Math.max(0, Math.round((end - start) / 86400000));
+}
+
+function daysInMonth(date) {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+}
+
+function pptDate(date) {
+    return `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function pptText(slide, text, x, y, w, h, opts = {}) {
+    slide.addText(String(text || ''), {
+        x, y, w, h,
+        fontFace: 'Meiryo UI',
+        fontSize: opts.fontSize || 8,
+        color: opts.color || PPT_COLORS.black,
+        bold: Boolean(opts.bold),
+        italic: Boolean(opts.italic),
+        align: opts.align || 'left',
+        valign: 'mid',
+        margin: opts.margin ?? 0.03,
+        fit: 'shrink',
+        breakLine: false,
+    });
+}
+
+function pptRect(slide, shapeType, x, y, w, h, fill, line = null) {
+    slide.addShape(shapeType, {
+        x, y, w: Math.max(w, 0.001), h: Math.max(h, 0.001),
+        fill: fill ? { color: fill } : { transparency: 100 },
+        line: line || { color: PPT_COLORS.white, transparency: 100 },
+    });
+}
+
 async function generatePPTXInBrowser(tasks, title, filename) {
     const PptxConstructor = await getPptxConstructor();
     const pptx = new PptxConstructor();
@@ -738,30 +824,174 @@ async function generatePPTXInBrowser(tasks, title, filename) {
     pptx.title = title;
     pptx.company = 'Browser export';
 
-    const slide = pptx.addSlide();
-    slide.background = { color: 'F8FAFC' };
-    slide.addText(title, {
-        x: 0.35, y: 0.18, w: 8.0, h: 0.35,
-        fontFace: 'Aptos',
-        fontSize: 18,
-        bold: true,
-        color: '1F2937',
-        margin: 0,
-    });
-    slide.addText(`Exported ${new Date().toLocaleDateString()}`, {
-        x: 0.35, y: 0.55, w: 3.0, h: 0.2,
-        fontFace: 'Aptos',
-        fontSize: 8,
-        color: '64748B',
-        margin: 0,
-    });
-    slide.addImage({
-        data: await captureGanttImage(),
-        x: 0.25,
-        y: 0.85,
-        w: 12.85,
-        h: 6.25,
-        sizing: { type: 'contain', x: 0.25, y: 0.85, w: 12.85, h: 6.25 },
+    const shapes = pptx.ShapeType || {
+        rect: 'rect',
+        roundRect: 'roundRect',
+        diamond: 'diamond',
+    };
+
+    const rows = tasks
+        .map(t => {
+            const start = t.startDate || t.endDate;
+            const end = t.endDate || t.startDate;
+            if (!start || !end) return null;
+            return { ...t, start, end };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.start - b.start);
+
+    if (!rows.length) {
+        throw new Error('No tasks with valid dates found.');
+    }
+
+    const allDates = rows.flatMap(t => [t.start, t.end]);
+    const startBound = state.customStart || new Date(Math.min(...allDates));
+    const endBound = state.customEnd || new Date(Math.max(...allDates));
+    const bs = monthStart(startBound);
+    const be = addMonths(monthStart(endBound), 3);
+    const totalDays = Math.max(1, daysBetween(bs, be));
+    const months = [];
+    for (let cur = new Date(bs); cur < be; cur = addMonths(cur, 1)) {
+        months.push(new Date(cur));
+    }
+
+    const slideW = 13.33;
+    const leftM = 0.4;
+    const topM = 1.1;
+    const wKey = 0.8;
+    const wBadge = 0.5;
+    const wSummary = 1.8;
+    const wDate = 0.6;
+    const leftW = wKey + wBadge + wSummary + wDate * 2;
+    const chartL = leftM + leftW + 0.1;
+    const chartW = slideW - chartL - 0.2;
+    const hYear = 0.25;
+    const hMonth = 0.25;
+    const hHeader = hYear + hMonth;
+    const hRow = 0.32;
+    const tasksPerSlide = 16;
+    const pages = [];
+    for (let i = 0; i < rows.length; i += tasksPerSlide) {
+        pages.push(rows.slice(i, i + tasksPerSlide));
+    }
+
+    pages.forEach((page, pageIndex) => {
+        const slide = pptx.addSlide();
+        slide.background = { color: PPT_COLORS.bgGray };
+
+        pptText(slide, title, leftM, 0.1, 6.0, 0.4, {
+            fontSize: 20,
+            bold: true,
+            color: PPT_COLORS.title,
+        });
+        pptText(slide, `${bs.getFullYear()}/${String(bs.getMonth() + 1).padStart(2, '0')} - ${be.getFullYear()}/${String(be.getMonth() + 1).padStart(2, '0')} (Page ${pageIndex + 1}/${pages.length})`,
+            leftM, 0.5, 4.4, 0.2, { fontSize: 9, color: PPT_COLORS.muted });
+
+        let lx = leftM;
+        [
+            ['Key', wKey],
+            ['Type', wBadge],
+            ['Summary', wSummary],
+            ['Start', wDate],
+            ['End', wDate],
+        ].forEach(([label, width]) => {
+            pptRect(slide, shapes.rect, lx, topM - hHeader, width, hHeader, PPT_COLORS.navy, { color: PPT_COLORS.white, width: 0.5 });
+            pptText(slide, label, lx, topM - hHeader, width, hHeader, {
+                fontSize: 9,
+                bold: true,
+                color: PPT_COLORS.white,
+                align: 'center',
+            });
+            lx += width;
+        });
+
+        const years = [];
+        months.forEach(m => {
+            let group = years.find(y => y.year === m.getFullYear());
+            if (!group) {
+                group = { year: m.getFullYear(), months: [] };
+                years.push(group);
+            }
+            group.months.push(m);
+        });
+
+        let yx = chartL;
+        years.forEach(group => {
+            const yw = group.months.reduce((sum, m) => sum + chartW * (daysInMonth(m) / totalDays), 0);
+            pptRect(slide, shapes.rect, yx, topM - hHeader, yw, hYear, PPT_COLORS.navy, { color: PPT_COLORS.white, width: 0.5 });
+            pptText(slide, group.year, yx, topM - hHeader, yw, hYear, {
+                fontSize: 10,
+                bold: true,
+                color: PPT_COLORS.white,
+                align: 'center',
+            });
+            yx += yw;
+        });
+
+        let mx = chartL;
+        months.forEach(m => {
+            const mw = chartW * (daysInMonth(m) / totalDays);
+            pptRect(slide, shapes.rect, mx, topM - hMonth, mw, hMonth, PPT_COLORS.lightBlue, { color: PPT_COLORS.white, width: 0.5 });
+            pptText(slide, m.getMonth() + 1, mx, topM - hMonth, mw, hMonth, {
+                fontSize: 8,
+                align: 'center',
+            });
+            pptRect(slide, shapes.rect, mx, topM - hMonth, 0.006, page.length * hRow + hMonth, PPT_COLORS.grid);
+            mx += mw;
+        });
+        pptRect(slide, shapes.rect, chartL + chartW, topM - hHeader, 0.006, page.length * hRow + hHeader, '9CA3AF');
+
+        page.forEach((row, rowIndex) => {
+            const y = topM + rowIndex * hRow;
+            pptRect(slide, shapes.rect, leftM, y + 0.04, slideW - leftM * 2, hRow - 0.08, PPT_COLORS.white, { color: PPT_COLORS.grid, width: 0.5 });
+
+            let curLx = leftM;
+            pptText(slide, row.key, curLx, y, wKey, hRow, {
+                fontSize: 8,
+                color: PPT_COLORS.muted,
+                align: 'center',
+            });
+            curLx += wKey;
+
+            const barColor = PPT_TYPE_COLORS[row.type] || PPT_COLORS.defaultBar;
+            pptRect(slide, shapes.roundRect, curLx + 0.05, y + 0.06, wBadge - 0.1, 0.2, mixHex(barColor), null);
+            pptText(slide, (row.type || 'Task').slice(0, 3).toUpperCase(), curLx + 0.05, y + 0.06, wBadge - 0.1, 0.2, {
+                fontSize: 7,
+                bold: true,
+                color: barColor,
+                align: 'center',
+                margin: 0,
+            });
+            curLx += wBadge;
+
+            pptText(slide, row.summary, curLx + 0.05, y, wSummary - 0.1, hRow, { fontSize: 8 });
+            curLx += wSummary;
+            pptText(slide, pptDate(row.start), curLx, y, wDate, hRow, { fontSize: 9, align: 'center' });
+            curLx += wDate;
+            pptText(slide, pptDate(row.end), curLx, y, wDate, hRow, { fontSize: 9, align: 'center' });
+
+            const rawX = chartL + chartW * (daysBetween(bs, row.start) / totalDays);
+            const rawW = chartW * (Math.max(1, daysBetween(row.start, row.end)) / totalDays);
+            const bx = Math.max(chartL, Math.min(chartL + chartW, rawX));
+            const bw = Math.max(0.03, Math.min(rawW, chartL + chartW - bx));
+            if (row.type === 'Milestone') {
+                pptRect(slide, shapes.diamond, bx - 0.08, y + 0.09, 0.14, 0.14, barColor);
+            } else {
+                pptRect(slide, shapes.roundRect, bx, y + 0.12, bw, 0.1, barColor);
+            }
+        });
+
+        const today = new Date();
+        if (bs <= today && today <= be) {
+            const tx = chartL + chartW * (daysBetween(bs, today) / totalDays);
+            pptRect(slide, shapes.rect, tx, topM - hMonth, 0.015, page.length * hRow + hMonth, PPT_COLORS.today);
+            pptText(slide, 'Today', tx - 0.2, topM - hMonth - 0.15, 0.4, 0.15, {
+                fontSize: 6,
+                color: PPT_COLORS.today,
+                bold: true,
+                align: 'center',
+            });
+        }
     });
 
     await pptx.writeFile({ fileName: filename });
