@@ -675,6 +675,7 @@ async function generatePPTXInBrowser(tasks, title, filename) {
     }
 
     const pptx = new pptxgen();
+    const shapeType = pptx.ShapeType || { rect: 'rect', roundRect: 'roundRect' };
     pptx.layout = 'LAYOUT_WIDE';
     pptx.author = 'Gantt Chart Generator';
     pptx.subject = 'CSV Gantt export';
@@ -721,7 +722,7 @@ async function generatePPTXInBrowser(tasks, title, filename) {
         for (const month of months) {
             const monthOffset = daysBetween(timelineStart, month) / totalDays;
             const monthW = daysInMonth(month) / totalDays;
-            slide.addShape(pptx.ShapeType.rect, {
+            slide.addShape(shapeType.rect, {
                 x: chartX + chartW * monthOffset,
                 y: top,
                 w: Math.max(chartW * monthW, 0.01),
@@ -740,7 +741,7 @@ async function generatePPTXInBrowser(tasks, title, filename) {
             const barW = Math.max(chartW * (Math.max(daysBetween(start, end), 1) / totalDays), 0.06);
             const color = (task.status === 'Done' || task.status === 'Closed') ? '27AE60' : hexForTaskType(task.type);
 
-            slide.addShape(pptx.ShapeType.rect, {
+            slide.addShape(shapeType.rect, {
                 x: left,
                 y: y + 0.03,
                 w: 12.6,
@@ -755,7 +756,7 @@ async function generatePPTXInBrowser(tasks, title, filename) {
             addPptText(slide, formatDate(start), left + keyW + typeW + summaryW, y, dateW, rowH, { fontSize: 6.5, align: 'center' });
             addPptText(slide, formatDate(end), left + keyW + typeW + summaryW + dateW, y, dateW, rowH, { fontSize: 6.5, align: 'center' });
 
-            slide.addShape(pptx.ShapeType.roundRect, {
+            slide.addShape(shapeType.roundRect, {
                 x: Math.max(chartX, barX),
                 y: y + 0.13,
                 w: barW,
@@ -866,20 +867,26 @@ async function exportPPTX() {
         if (state.customEnd) payload.timelineEnd = formatDate(state.customEnd);
 
         if (isLocalServer()) {
-            const response = await fetch('/api/generate-pptx', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
+            try {
+                const response = await fetch('/api/generate-pptx', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
 
-            const result = await response.json();
+                if (response.ok) {
+                    const result = await response.json();
 
-            if (result.success) {
-                showNotification(`PPTX saved to output folder:\n${result.filename}`, 'success');
-            } else {
-                showNotification(`Error: ${result.error}`, 'error');
+                    if (result.success) {
+                        showNotification(`PPTX saved to output folder:\n${result.filename}`, 'success');
+                        return;
+                    }
+
+                    console.warn('Server PPTX export failed:', result.error);
+                }
+            } catch (serverErr) {
+                console.warn('Server PPTX export skipped:', serverErr);
             }
-            return;
         }
 
         await generatePPTXInBrowser(tasks, title, filename);
