@@ -643,25 +643,31 @@ function isLocalServer() {
     return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 }
 
-function hexForTaskType(type) {
-    const conf = TYPE_CONFIG[type] || { hex: '#828282' };
-    return conf.hex.replace('#', '').toUpperCase();
-}
+async function captureGanttImage() {
+    const ganttWrapper = document.getElementById('gantt-wrapper');
+    const container = document.getElementById('gantt-container');
+    const origWrapperOverflow = ganttWrapper.style.overflow;
+    const origContainerOverflow = container.style.overflow;
+    const origWrapperWidth = ganttWrapper.style.width;
 
-function addPptText(slide, text, x, y, w, h, options = {}) {
-    slide.addText(String(text || ''), {
-        x, y, w, h,
-        fontFace: 'Aptos',
-        fontSize: options.fontSize || 7,
-        bold: Boolean(options.bold),
-        color: options.color || '1F2937',
-        margin: 0.03,
-        valign: 'mid',
-        fit: 'shrink',
-        breakLine: false,
-        align: options.align || 'left',
-        fill: options.fill ? { color: options.fill } : undefined,
-    });
+    ganttWrapper.style.overflow = 'visible';
+    container.style.overflow = 'visible';
+    ganttWrapper.style.width = `${container.scrollWidth}px`;
+
+    try {
+        const canvas = await html2canvas(ganttWrapper, {
+            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim(),
+            scale: 2,
+            logging: false,
+            useCORS: true,
+            windowWidth: Math.max(document.documentElement.clientWidth, container.scrollWidth),
+        });
+        return canvas.toDataURL('image/png');
+    } finally {
+        ganttWrapper.style.overflow = origWrapperOverflow;
+        container.style.overflow = origContainerOverflow;
+        ganttWrapper.style.width = origWrapperWidth;
+    }
 }
 
 async function generatePPTXInBrowser(tasks, title, filename) {
@@ -669,104 +675,38 @@ async function generatePPTXInBrowser(tasks, title, filename) {
         throw new Error('pptxgenjs is not loaded.');
     }
 
-    const realTasks = tasks.filter(t => !t.isGroup && (t.startDate || t.endDate));
-    if (realTasks.length === 0) {
-        throw new Error('No dated tasks to export.');
-    }
-
     const pptx = new pptxgen();
-    const shapeType = pptx.ShapeType || { rect: 'rect', roundRect: 'roundRect' };
     pptx.layout = 'LAYOUT_WIDE';
     pptx.author = 'Gantt Chart Generator';
     pptx.subject = 'CSV Gantt export';
     pptx.title = title;
-    pptx.company = 'Local browser export';
+    pptx.company = 'Browser export';
 
-    const starts = realTasks.map(t => t.startDate || t.endDate);
-    const ends = realTasks.map(t => t.endDate || t.startDate);
-    const first = state.customStart || new Date(Math.min(...starts.map(d => d.getTime())));
-    const last = state.customEnd || new Date(Math.max(...ends.map(d => d.getTime())));
-    const timelineStart = new Date(first.getFullYear(), first.getMonth(), 1);
-    const timelineEnd = new Date(last.getFullYear(), last.getMonth() + 2, 0);
-    const totalDays = Math.max(daysBetween(timelineStart, timelineEnd), 1);
-    const pageSize = 16;
-
-    for (let pageStart = 0; pageStart < realTasks.length; pageStart += pageSize) {
-        const pageTasks = realTasks.slice(pageStart, pageStart + pageSize);
-        const pageNumber = Math.floor(pageStart / pageSize) + 1;
-        const pageCount = Math.ceil(realTasks.length / pageSize);
-        const slide = pptx.addSlide();
-        slide.background = { color: 'F8FAFC' };
-
-        const left = 0.35;
-        const top = 1.05;
-        const rowH = 0.34;
-        const keyW = 0.78;
-        const typeW = 0.55;
-        const summaryW = 2.15;
-        const dateW = 0.72;
-        const chartX = left + keyW + typeW + summaryW + dateW * 2 + 0.12;
-        const chartW = 13.0 - chartX;
-
-        addPptText(slide, title, left, 0.15, 6.2, 0.35, { fontSize: 18, bold: true });
-        addPptText(slide, `${formatDate(timelineStart)} - ${formatDate(timelineEnd)}  Page ${pageNumber}/${pageCount}`, left, 0.55, 5.2, 0.22, { fontSize: 8, color: '64748B' });
-
-        let x = left;
-        for (const [label, width] of [['Key', keyW], ['Type', typeW], ['Summary', summaryW], ['Start', dateW], ['End', dateW]]) {
-            addPptText(slide, label, x, top - 0.38, width, 0.38, { fontSize: 8, bold: true, color: 'FFFFFF', fill: '1F3D6E', align: 'center' });
-            x += width;
-        }
-        addPptText(slide, 'Timeline', chartX, top - 0.38, chartW, 0.38, { fontSize: 8, bold: true, color: 'FFFFFF', fill: '1F3D6E', align: 'center' });
-
-        const months = getMonthsBetween(timelineStart, timelineEnd);
-        for (const month of months) {
-            const monthOffset = daysBetween(timelineStart, month) / totalDays;
-            const monthW = daysInMonth(month) / totalDays;
-            slide.addShape(shapeType.rect, {
-                x: chartX + chartW * monthOffset,
-                y: top,
-                w: Math.max(chartW * monthW, 0.01),
-                h: pageTasks.length * rowH,
-                fill: { color: 'EEF2F7', transparency: 55 },
-                line: { color: 'E5E7EB', transparency: 25 },
-            });
-            addPptText(slide, `${month.getFullYear()}/${month.getMonth() + 1}`, chartX + chartW * monthOffset, top - 0.2, Math.max(chartW * monthW, 0.25), 0.18, { fontSize: 6, align: 'center', color: '475569' });
-        }
-
-        pageTasks.forEach((task, index) => {
-            const y = top + index * rowH;
-            const start = task.startDate || task.endDate;
-            const end = task.endDate || task.startDate;
-            const barX = chartX + chartW * (daysBetween(timelineStart, start) / totalDays);
-            const barW = Math.max(chartW * (Math.max(daysBetween(start, end), 1) / totalDays), 0.06);
-            const color = (task.status === 'Done' || task.status === 'Closed') ? '27AE60' : hexForTaskType(task.type);
-
-            slide.addShape(shapeType.rect, {
-                x: left,
-                y: y + 0.03,
-                w: 12.6,
-                h: rowH - 0.06,
-                fill: { color: 'FFFFFF' },
-                line: { color: 'E5E7EB', transparency: 25 },
-            });
-
-            addPptText(slide, task.key, left, y, keyW, rowH, { fontSize: 7, color: '64748B', align: 'center' });
-            addPptText(slide, task.type, left + keyW, y, typeW, rowH, { fontSize: 6, color, align: 'center' });
-            addPptText(slide, task.summary, left + keyW + typeW + 0.05, y, summaryW - 0.08, rowH, { fontSize: 7 });
-            addPptText(slide, formatDate(start), left + keyW + typeW + summaryW, y, dateW, rowH, { fontSize: 6.5, align: 'center' });
-            addPptText(slide, formatDate(end), left + keyW + typeW + summaryW + dateW, y, dateW, rowH, { fontSize: 6.5, align: 'center' });
-
-            slide.addShape(shapeType.roundRect, {
-                x: Math.max(chartX, barX),
-                y: y + 0.13,
-                w: barW,
-                h: 0.09,
-                rectRadius: 0.02,
-                fill: { color },
-                line: { color, transparency: 100 },
-            });
-        });
-    }
+    const slide = pptx.addSlide();
+    slide.background = { color: 'F8FAFC' };
+    slide.addText(title, {
+        x: 0.35, y: 0.18, w: 8.0, h: 0.35,
+        fontFace: 'Aptos',
+        fontSize: 18,
+        bold: true,
+        color: '1F2937',
+        margin: 0,
+    });
+    slide.addText(`Exported ${new Date().toLocaleDateString()}`, {
+        x: 0.35, y: 0.55, w: 3.0, h: 0.2,
+        fontFace: 'Aptos',
+        fontSize: 8,
+        color: '64748B',
+        margin: 0,
+    });
+    slide.addImage({
+        data: await captureGanttImage(),
+        x: 0.25,
+        y: 0.85,
+        w: 12.85,
+        h: 6.25,
+        sizing: { type: 'contain', x: 0.25, y: 0.85, w: 12.85, h: 6.25 },
+    });
 
     await pptx.writeFile({ fileName: filename });
 }
@@ -775,24 +715,8 @@ async function generatePPTXInBrowser(tasks, title, filename) {
 // Export Functions
 // ========================================
 async function exportPNG() {
-    const ganttWrapper = document.getElementById('gantt-wrapper');
-    
-    // Temporarily expand to full size for capture
-    const origOverflow = ganttWrapper.style.overflow;
-    const container = document.getElementById('gantt-container');
-    const origContainerOverflow = container.style.overflow;
-    ganttWrapper.style.overflow = 'visible';
-    container.style.overflow = 'visible';
-    
     try {
-        const canvas = await html2canvas(ganttWrapper, {
-            backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim(),
-            scale: 2,
-            logging: false,
-            useCORS: true,
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
+        const imgData = await captureGanttImage();
         const filename = `gantt_${new Date().toISOString().slice(0,10)}.png`;
         
         // Save to browser download as fallback
@@ -824,9 +748,6 @@ async function exportPNG() {
     } catch (err) {
         console.error('PNG export failed:', err);
         alert('PNG export failed: ' + err.message);
-    } finally {
-        ganttWrapper.style.overflow = origOverflow;
-        container.style.overflow = origContainerOverflow;
     }
 }
 
