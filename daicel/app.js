@@ -643,6 +643,53 @@ function isLocalServer() {
     return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
 }
 
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const existing = document.querySelector(`script[src="${src}"]`);
+        if (existing) {
+            existing.addEventListener('load', resolve, { once: true });
+            existing.addEventListener('error', reject, { once: true });
+            if (window.PptxGenJS || window.pptxgen || window.pptxgenjs) resolve();
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Failed to load ${src}`));
+        document.head.appendChild(script);
+    });
+}
+
+async function getPptxConstructor() {
+    if (window.PptxGenJS || window.pptxgen || window.pptxgenjs) {
+        return window.PptxGenJS || window.pptxgen || window.pptxgenjs;
+    }
+
+    const sourceSets = [
+        ['vendor/jszip.min.js', 'vendor/pptxgen.min.js'],
+        [
+            'https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/libs/jszip.min.js',
+            'https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.min.js',
+        ],
+        ['https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js'],
+    ];
+
+    for (const sources of sourceSets) {
+        try {
+            for (const src of sources) {
+                await loadScript(src);
+            }
+            const constructor = window.PptxGenJS || window.pptxgen || window.pptxgenjs;
+            if (constructor) return constructor;
+        } catch (err) {
+            console.warn(err.message);
+        }
+    }
+
+    throw new Error('PptxGenJS library could not be loaded.');
+}
+
 async function captureGanttImage() {
     const ganttWrapper = document.getElementById('gantt-wrapper');
     const container = document.getElementById('gantt-container');
@@ -671,11 +718,7 @@ async function captureGanttImage() {
 }
 
 async function generatePPTXInBrowser(tasks, title, filename) {
-    const PptxConstructor = window.PptxGenJS || window.pptxgen || window.pptxgenjs;
-    if (!PptxConstructor) {
-        throw new Error('pptxgenjs is not loaded.');
-    }
-
+    const PptxConstructor = await getPptxConstructor();
     const pptx = new PptxConstructor();
     pptx.layout = 'LAYOUT_WIDE';
     pptx.author = 'Gantt Chart Generator';
