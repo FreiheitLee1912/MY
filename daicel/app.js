@@ -647,15 +647,27 @@ function loadScript(src) {
     return new Promise((resolve, reject) => {
         const existing = document.querySelector(`script[src="${src}"]`);
         if (existing) {
-            existing.addEventListener('load', resolve, { once: true });
-            existing.addEventListener('error', reject, { once: true });
-            if (window.PptxGenJS || window.pptxgen || window.pptxgenjs) resolve();
+            if (existing.dataset.loaded === 'true') {
+                resolve();
+                return;
+            }
+            if (existing.dataset.loading === 'true') {
+                existing.addEventListener('load', resolve, { once: true });
+                existing.addEventListener('error', () => reject(new Error(`Failed to load ${src}`)), { once: true });
+                return;
+            }
+            resolve();
             return;
         }
 
         const script = document.createElement('script');
         script.src = src;
-        script.onload = resolve;
+        script.dataset.loading = 'true';
+        script.onload = () => {
+            script.dataset.loaded = 'true';
+            script.dataset.loading = 'false';
+            resolve();
+        };
         script.onerror = () => reject(new Error(`Failed to load ${src}`));
         document.head.appendChild(script);
     });
