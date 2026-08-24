@@ -24,3 +24,9 @@ https://freiheitlee1912.github.io/MY/daicel/
 PPTX 出力は、GitHub Pages 上でも動作するようにブラウザ内で生成します。現在の PPTX は、スクリーンショット貼り付けではなく、表ヘッダー・月表示・タスクバー・マイルストーンなどを PowerPoint の図形として生成する形式です。
 
 詳しい使い方は [daicel/README.md](daicel/README.md) を参照してください。
+
+## docs
+
+`docs` フォルダには、運用ルールや管理定義に関するドキュメントを配置しています。
+
+- [JIRA における「案件管理」の定義 — 認識合わせドラフト](docs/jira-project-management-definition.md)
