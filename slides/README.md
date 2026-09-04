@@ -7,7 +7,7 @@ ACN（コンサル型）の版面で組んだスライド一式。
 
 | スタイル | 由来 | ファイル |
 |---|---|---|
-| **ダイセル標準テンプレート** | `2026_Standard_Template_WideScreen` | `daicel_kit.py` / `build_deck_daicel.py` |
+| **ダイセル標準テンプレート** | `2026_Standard_Template_WideScreen` | `daicel_kit.py` / `build_deck_daicel.py` / `build_deck_potential.py` |
 | TITUS納品物スタイル | Bジ／TITUS 実資料からの実測 | `titus_kit.py` / `build_deck_titus.py` |
 | ACNブランドテンプレート | Accenture 2020 スターターパック `.potx` | `acn_kit.py` / `build_deck.py` / `build_slide.py` |
 
@@ -21,6 +21,9 @@ pip install python-pptx
 
 # JIRA文書管理規程（全11枚）— ダイセル標準テンプレート
 python build_deck_daicel.py --template 2026_Standard_Template_WideScreenEN.pptx
+
+# ポテンシャル案件の生準管理ルール（全12枚）— ダイセル標準テンプレート
+python build_deck_potential.py --template 2026_Standard_Template_WideScreenEN.pptx
 
 # JIRA文書管理規程（全10枚）— TITUS納品物スタイル
 python build_deck_titus.py
@@ -150,3 +153,26 @@ TITUS版は Meiryo UI のまま影響を受けない）。
 無く LibreOffice が代替フォントに置き換えるため、行間の差はプレビューでは
 再現されない。固定高さのセルには余裕を持たせてあるが、実機の PowerPoint で
 一度確認することを勧める。
+
+
+## ポテンシャル案件の生準管理ルール
+
+`build_deck_potential.py`。ダイセル標準テンプレート・Meiryo、`daicel_kit` の版面を共用。
+
+| # | スライド | 内容 |
+|---|---|---|
+| 1 | 表紙 | ポテンシャル案件の生準管理ルール（案・試行運用） |
+| 2 | 全体像 | 第1〜7節の構成と判断軸 |
+| 3 | [1] 目的 | 管理対象をC+に限定／ねらい3点 |
+| 4 | [2] 管理の境界 | ライフサイクル8フェーズ＋2つの管理バンド、C+の定義 |
+| 5 | [2] Potential Rank | 表1（A/B/C+/C/D/X）— C+行を強調 |
+| 6 | [3] 3つの判定Gate | Gate 01/02/03＋優先順位・作業依頼の注記 |
+| 7 | [4] kintone登録項目 | 表2 |
+| 8 | [5] 生準が更新する項目 | 表3（ドラフト・要精査） |
+| 9 | [6] レビューと日常管理 | 表4 — 影響度「大」のみ強調 |
+| 10 | [7] 共通ルール | やらないこと3点＋JIRA文書管理規程への接続 |
+| 11 | まとめ | 要点3点＋確定が必要な事項3点 |
+| 12 | Back Cover | Thank you |
+
+ステータスタグは「試行運用」（本ルールは案）と「要確定」（Gate 01の判定条件、表3の精査）。
+原文の未確定箇所は伏せずにタグとまとめページへ集約している。
