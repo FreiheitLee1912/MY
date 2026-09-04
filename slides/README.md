@@ -7,7 +7,8 @@ ACN（コンサル型）の版面で組んだスライド一式。
 
 | スタイル | 由来 | ファイル |
 |---|---|---|
-| **TITUS納品物スタイル** | Bジ／TITUS 実資料からの実測 | `titus_kit.py` / `build_deck_titus.py` |
+| **ダイセル標準テンプレート** | `2026_Standard_Template_WideScreen` | `daicel_kit.py` / `build_deck_daicel.py` |
+| TITUS納品物スタイル | Bジ／TITUS 実資料からの実測 | `titus_kit.py` / `build_deck_titus.py` |
 | ACNブランドテンプレート | Accenture 2020 スターターパック `.potx` | `acn_kit.py` / `build_deck.py` / `build_slide.py` |
 
 同じ「ACN」でも別物で、実プロジェクトで使われているのは前者。
@@ -17,6 +18,9 @@ TITUS資料と混ぜて配るなら `build_deck_titus.py` を使う。
 
 ```bash
 pip install python-pptx
+
+# JIRA文書管理規程（全11枚）— ダイセル標準テンプレート
+python build_deck_daicel.py --template 2026_Standard_Template_WideScreenEN.pptx
 
 # JIRA文書管理規程（全10枚）— TITUS納品物スタイル
 python build_deck_titus.py
@@ -114,3 +118,35 @@ python build_slide.py --brand acn --template <Acc_PPT_IMP_StarterPack....potx>
 赤 `FF0000`、緑 `009900`、橙 `FA9628`、紫 `644080`。
 ステータスタグと注記の淡色は、元資料と同じ `lumMod 20% / lumOff 80%` を
 `titus_kit.tint()` で再現している（決定事項 → `FEEAD4`、継続議論 → `E1D5EA`）。
+
+
+## ダイセル標準テンプレート版
+
+`build_deck_daicel.py` はテンプレートのサンプルスライドだけを外し、
+マスター（ロゴ・上部罫・下部著作権帯・QRコード）はそのまま継承する。
+表紙は「タイトル スライド」、本文は「タイトルとコンテンツ」、
+巻末は「Back Cover」レイアウトを使用。
+
+版面はテンプレートの実測値：
+
+| 要素 | 位置・サイズ |
+|---|---|
+| タイトル | x=0.92 y=0.19 w=10.30 h=0.60（既定40pt → 和文向けに22pt） |
+| 本文領域 | x=0.92 y=1.05 w=11.50 h=5.70 |
+| 日付 | x=0.92 y=6.90 |
+| 注記（著作権） | x=4.07 y=6.90 w=5.19（7pt / `808080`） |
+| ページ番号 | x=9.48 y=6.90 w=2.93（右寄せ） |
+
+配色はテンプレートのロゴから採取したブランドブルー `0096D8`、
+濃色 `00558C`、淡色 `E5F4FC`。罫線は黒ではなく `BFBFBF`
+（テンプレートの端正な体裁に合わせ、TITUS版の黒罫は使わない）。
+
+書体は **Meiryo**。テンプレートのマスターは Meiryo UI を既定にしているが、
+この版は `daicel_kit.FONT` で Meiryo に上書きしている
+（`titus_kit.style()` が呼び出し時に `FONT` を解決するため、
+TITUS版は Meiryo UI のまま影響を受けない）。
+
+**注意** Meiryo は Meiryo UI より行間が広い。プレビュー環境には両書体が
+無く LibreOffice が代替フォントに置き換えるため、行間の差はプレビューでは
+再現されない。固定高さのセルには余裕を持たせてあるが、実機の PowerPoint で
+一度確認することを勧める。

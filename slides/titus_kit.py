@@ -58,7 +58,10 @@ BODY_TOP = 1.70
 FOOT = "Copyright © 2021 Accenture. All rights reserved. Highly Confidential"
 
 
-def style(run, size, bold=False, color=BLACK, face=FONT):
+def style(run, size, bold=False, color=BLACK, face=None):
+    # resolved at call time so a caller can retarget the whole deck's face
+    # by setting titus_kit.FONT (the DAICEL build uses "Meiryo").
+    face = face or FONT
     f = run.font
     f.size, f.bold, f.name = Pt(size), bold, face
     f.color.rgb = color
