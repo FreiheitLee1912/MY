@@ -22,8 +22,9 @@ pip install python-pptx
 # JIRA文書管理規程（全11枚）— ダイセル標準テンプレート
 python build_deck_daicel.py --template 2026_Standard_Template_WideScreenEN.pptx
 
-# ポテンシャル案件の生準管理ルール（全12枚）— ダイセル標準テンプレート
-python build_deck_potential.py --template 2026_Standard_Template_WideScreenEN.pptx
+# ポテンシャル案件の生準管理ルール — ダイセル標準テンプレート
+python build_deck_potential.py --template 2026_Standard_Template_WideScreenEN.pptx            # 全12枚
+python build_deck_potential.py --template 2026_Standard_Template_WideScreenEN.pptx --pages 3  # 3ページ凝縮版
 
 # JIRA文書管理規程（全10枚）— TITUS納品物スタイル
 python build_deck_titus.py
@@ -176,3 +177,18 @@ TITUS版は Meiryo UI のまま影響を受けない）。
 
 ステータスタグは「試行運用」（本ルールは案）と「要確定」（Gate 01の判定条件、表3の精査）。
 原文の未確定箇所は伏せずにタグとまとめページへ集約している。
+
+
+### 3ページ凝縮版
+
+`--pages 3` で、12枚を「どの案件を／どの粒度で／何を記録するか」の3軸に畳む。
+表紙・Back Coverは付けず、本文3ページのみ。
+
+| # | ページ | 畳んだ節 |
+|---|---|---|
+| 1 | 管理対象と境界 ― 見るのはC+だけ | 第1・2節（ライフサイクル図＋表1） |
+| 2 | 判定Gateと管理の濃淡 | 第3・6節（Gate 01-03＋表4） |
+| 3 | kintone登録項目と共通ルール | 第4・5・7節（表2＋表3＋やらないこと） |
+
+落とした要素：各Gateの「目的」欄（判定条件のみ残す）、表3の「更新の目安」列、
+まとめページ。未確定事項は3ページ目下部の注記に集約している。

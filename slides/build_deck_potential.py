@@ -348,6 +348,178 @@ def back_cover(prs):
     return sl
 
 
+
+
+# ============================================================================
+# 3ページ版 — 12枚を「どの案件を／どの粒度で／何を記録するか」の3軸に畳んだもの
+# ============================================================================
+
+PHASES = ["引き合い\nコンペ", "C+", "A／Award", "投資・設計",
+          "量産準備", "PPAP\n顧客承認", "SOP", "PCR"]
+
+
+def p1_scope(prs, n):
+    """どの案件を見るか — 管理の境界とRank定義."""
+    sl = page(prs, "[1-2] 管理対象と境界 ― 見るのはC+だけ",
+              "生準がモニタリングする対象はC+に限定する。C+はMTP・Budget・投資判断に"
+              "含まれるため、未受注でも先行して状況を把握する。", (TRIAL,), n)
+    y = BODY_TOP
+    secbar(sl, L, y, W, "プロダクトライフサイクルと管理の境界", h=0.32, size=12.5)
+    gap = 0.06
+    pw = (W - gap * (len(PHASES) - 1)) / len(PHASES)
+    bx = lambda i: L + i * (pw + gap)
+    for i, name in enumerate(PHASES):
+        hot = (i == 1)
+        cell(sl, bx(i), y + 0.40, pw, 0.56, name, 10.5, hot,
+             WHITE if hot else BLACK, BLUE if hot else GREY,
+             RULE, 0.75, align=PP_ALIGN.CENTER, space=1.2)
+    cell(sl, bx(1), y + 1.02, bx(3) - bx(1) - gap, 0.34,
+         "生準モニタリング｜kintone", 10.5, True, WHITE, BLUE, None)
+    cell(sl, bx(2), y + 1.40, bx(8) - bx(2) - gap, 0.34,
+         "生準正式管理｜A／Award以降・JIRA新規立上げ", 10.5, True, WHITE, DARK, None)
+
+    ty = y + 1.96
+    secbar(sl, L, ty, W, "表1　Potential Rankの定義と生準の関与", h=0.32, size=12.5)
+    cols = [("Rank", 0.90), ("定義", 4.55), ("MTP・Budget・投資", 1.75), ("生準の関与", W - 7.20)]
+    x = L
+    for t, w in cols:
+        cell(sl, x, ty + 0.32, w, 0.30, t, 10, True, WHITE, DARK, RULE, 0.75)
+        x += w
+    rows = [("A", "現行商権／受注獲得済のプログラム", "対象", "Award以降、JIRAで正式管理"),
+            ("B", "現行商権の次期車／商権獲得が確定的なもの", "対象",
+             "既存のAction Plan／MTP・Budget管理へ引き継ぐ"),
+            ("C+", "未受注だが戦略的に獲得を前提として取り組んでおり、投資判断にも考慮されるターゲット案件",
+             "対象", "kintoneでモニタリング（本ルールの対象）"),
+            ("C", "営業としてのターゲットプログラムだが、Moduleとは合意前のもの", "対象外", "情報確認のみ"),
+            ("D", "受注ターゲットにできるか、案件として先ずはリストに載せたもの", "対象外", "モニタリング対象外"),
+            ("X", "現行商権の次期車でも商権を失ったもの", "対象外", "モニタリング対象外")]
+    ry = ty + 0.62
+    for rank, dfn, mtp, role in rows:
+        hot = rank == "C+"
+        tcell(sl, L, ry, 0.90, 0.40, rank, 11.5, True,
+              WHITE if hot else DARK, BLUE if hot else PALE, PP_ALIGN.CENTER)
+        tcell(sl, L + 0.90, ry, 4.55, 0.40, dfn, 9.5,
+              fill=NOTE_FILL if hot else WHITE, pad=0.10, space=1.15)
+        tcell(sl, L + 5.45, ry, 1.75, 0.40, mtp, 10, mtp == "対象",
+              DARK if mtp == "対象" else MUTED,
+              NOTE_FILL if hot else WHITE, PP_ALIGN.CENTER)
+        tcell(sl, L + 7.20, ry, W - 7.20, 0.40, role, 9.5, hot, BLACK,
+              NOTE_FILL if hot else WHITE, pad=0.10, space=1.15)
+        ry += 0.40
+
+
+def p2_grain(prs, n):
+    """どの粒度で見るか — 判定Gateと影響度別の管理."""
+    sl = page(prs, "[3][6] 判定Gateと管理の濃淡",
+              "管理対象・粒度・ツールは3つのGateで切り替え、影響度で管理の濃淡をつける。",
+              (TRIAL, TBD), n)
+    y = BODY_TOP
+    secbar(sl, L, y, W, "3つの判定Gate", h=0.32, size=12.5)
+    g = [("01　C+該当／管理開始", BLUE,
+          "Action PlanでC+と判定／想定SOP・顧客判断時期／全体管理対象（要確定）",
+          "判定後　C+＝kintone登録"),
+         ("02　C+生準影響度判定", DARK,
+          "設備・金型／工程／能力／拠点／長納期品／日程・技術・品質／投資／"
+          "想定SOP時期／新規品種か否か",
+          "判定後　小＝簡易／中＝標準／大＝重点"),
+         ("03　正式案件化", BLUE,
+          "Nomination／採用内示／正式発注など、受注・採用の確定",
+          "判定後　JIRAへ新規立上げ案件を登録")]
+    cw = (W - 0.40) / 3
+    gy = y + 0.40
+    for i, (t, col, cond, res) in enumerate(g):
+        x = L + i * (cw + 0.20)
+        cell(sl, x, gy, cw, 0.38, t, 12, True, WHITE, col, None)
+        tcell(sl, x, gy + 0.38, cw, 0.20, "主な判定条件", 9, True, MUTED, PALE, pad=0.10)
+        tcell(sl, x, gy + 0.58, cw, 0.90, cond, 10, pad=0.12, space=1.28)
+        cell(sl, x, gy + 1.48, cw, 0.36, res, 10.5, True, col, PALE, RULE, 0.75)
+
+    ty = gy + 2.06
+    secbar(sl, L, ty, W, "表4　影響度別の管理方法", h=0.32, size=12.5)
+    cols = [("影響度", 1.50), ("管理方法", 3.50), ("頻度", 2.60), ("見る内容", W - 7.60)]
+    x = L
+    for t, w in cols:
+        cell(sl, x, ty + 0.32, w, 0.30, t, 10, True, WHITE, DARK, RULE, 0.75)
+        x += w
+    rows = [("小", "個別担当で管理（レビューなし）", "随時", "変化点のみ", False),
+            ("中", "個別担当で管理（レビューなし）", "随時", "影響・Risk・Action", False),
+            ("大", "レビューを実施", "隔週または重要マイルストーン",
+             "投資・長納期品・逆算日程", True)]
+    ry = ty + 0.62
+    for lvl, how, freq, what, hot in rows:
+        tcell(sl, L, ry, 1.50, 0.46, lvl, 13, True,
+              WHITE if hot else DARK, BLUE if hot else PALE, PP_ALIGN.CENTER)
+        tcell(sl, L + 1.50, ry, 3.50, 0.46, how, 10.5, hot, BLACK,
+              NOTE_FILL if hot else WHITE, pad=0.12)
+        tcell(sl, L + 5.00, ry, 2.60, 0.46, freq, 10.5, hot, BLACK,
+              NOTE_FILL if hot else WHITE, pad=0.12)
+        tcell(sl, L + 7.60, ry, W - 7.60, 0.46, what, 10.5, hot, BLACK,
+              NOTE_FILL if hot else WHITE, pad=0.12)
+        ry += 0.46
+    note(sl, L, ry + 0.20, W, 0.44, "優先順位",
+         "想定SOPが早い案件と新規品種の案件を優先する。"
+         "生準に作業を依頼するときはATP上のポテンシャルをC+に変更したうえで依頼する。",
+         size=10.5)
+
+
+def p3_record(prs, n):
+    """何を記録し、何をしないか — kintone項目と共通ルール."""
+    sl = page(prs, "[4][5][7] kintone登録項目と共通ルール",
+              "C+と判定した案件はkintoneに登録し、生産準備に関する項目は生準が更新する。",
+              (TRIAL, TBD), n)
+    y = BODY_TOP
+    cw = (W - 0.20) / 2
+    secbar(sl, L, y, cw, "表2　C+案件サマリーの登録項目", h=0.32, size=12)
+    reg = [("案件基本", "案件ID／顧客／Project・車種／対象製品"),
+           ("Rank", "C+／C+判定日"),
+           ("担当", "生準担当"),
+           ("日程・規模", "想定SOP／顧客判断日／数量／拠点／次回確認日"),
+           ("生準影響", "小・中・大／設備・金型・工程・能力"),
+           ("Action・結果", "次アクション／先行着手承認／案件結果")]
+    ry = y + 0.32
+    for k, v in reg:
+        tcell(sl, L, ry, 1.55, 0.44, k, 10, True, DARK, PALE, PP_ALIGN.CENTER, pad=0.08)
+        tcell(sl, L + 1.55, ry, cw - 1.55, 0.44, v, 9.5, pad=0.10, space=1.15)
+        ry += 0.44
+
+    x2 = L + cw + 0.20
+    secbar(sl, x2, y, cw, "表3　生準が更新する項目（ドラフト）", h=0.32, size=12)
+    upd = [("判定・区分", "生準影響度／影響度判定日／優先順位"),
+           ("生産条件", "想定生産拠点／新規・流用の別／対象製品"),
+           ("設備・金型", "設備・金型の新設／改造／流用／必要投資の概算"),
+           ("工程・能力", "新規工程の要否／必要能力／現有能力との差"),
+           ("日程", "想定SOPからの逆算日程／長納期品の有無と品目"),
+           ("先行対応", "先行着手の要否／承認状況／着手日"),
+           ("課題・Action", "技術・品質課題／リスク／次アクションと期限")]
+    ry2 = y + 0.32
+    for k, v in upd:
+        tcell(sl, x2, ry2, 1.55, 0.377, k, 10, True, DARK, PALE, PP_ALIGN.CENTER, pad=0.08)
+        tcell(sl, x2 + 1.55, ry2, cw - 1.55, 0.377, v, 9.5, pad=0.10, space=1.15)
+        ry2 += 0.377
+
+    ny = max(ry, ry2) + 0.22
+    secbar(sl, L, ny, W, "やらないこと", h=0.32, size=12.5, fill=RED)
+    dont = ["RFQ・提案・コンペだけを理由に\n生準管理を始めない",
+            "C+以外の案件を\nkintoneに登録しない",
+            "受注確定前に\nJIRA Taskを作成しない"]
+    dw = (W - 0.40) / 3
+    for i, t in enumerate(dont):
+        cell(sl, L + i * (dw + 0.20), ny + 0.40, dw, 0.62, t, 11, True, RED,
+             WARN_FILL, RULE, 0.75, align=PP_ALIGN.CENTER, space=1.3)
+    note(sl, L, ny + 1.14, W, 0.46, "受注確定後・要確定",
+         "受注確定後の記録は「JIRA文書管理規程」による。"
+         "Gate 01の「全体管理対象」の定義と表3の項目精査は要確定。本ルールは案。",
+         size=10.5)
+
+
+def build_three(template, output):
+    prs = Presentation(base_from_template(template))
+    for i, fn in enumerate([p1_scope, p2_grain, p3_record], start=1):
+        fn(prs, i)
+    prs.save(output)
+    print("saved", output, "-", len(prs.slides._sldIdLst), "slides")
+
+
 def build(template, output):
     prs = Presentation(base_from_template(template))
     cover(prs)
@@ -362,6 +534,11 @@ def build(template, output):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--template", required=True)
-    ap.add_argument("-o", "--output", default="potential_management_rule_daicel.pptx")
+    ap.add_argument("--pages", choices=["12", "3"], default="12",
+                    help="12=詳細版 / 3=3ページ凝縮版")
+    ap.add_argument("-o", "--output")
     a = ap.parse_args()
-    build(a.template, a.output)
+    if a.pages == "3":
+        build_three(a.template, a.output or "potential_management_rule_3p.pptx")
+    else:
+        build(a.template, a.output or "potential_management_rule_daicel.pptx")
