@@ -3,18 +3,25 @@
 ACN（コンサル型）の版面で組んだスライド一式。
 版面は共通で、配色だけを 2 ブランド分切り替えられます。
 
-| ファイル | 内容 |
-|---|---|
-| `acn_kit.py` | 共通の版面・配色・描画ヘルパー |
-| `build_slide.py` | 「JIRA登録タイミング」1枚もの |
-| `build_deck.py` | 「JIRA文書管理規程」全10枚 |
+スタイルは2系統ある。
+
+| スタイル | 由来 | ファイル |
+|---|---|---|
+| **TITUS納品物スタイル** | Bジ／TITUS 実資料からの実測 | `titus_kit.py` / `build_deck_titus.py` |
+| ACNブランドテンプレート | Accenture 2020 スターターパック `.potx` | `acn_kit.py` / `build_deck.py` / `build_slide.py` |
+
+同じ「ACN」でも別物で、実プロジェクトで使われているのは前者。
+TITUS資料と混ぜて配るなら `build_deck_titus.py` を使う。
 
 ## 生成方法
 
 ```bash
 pip install python-pptx
 
-# JIRA文書管理規程（全10枚）
+# JIRA文書管理規程（全10枚）— TITUS納品物スタイル
+python build_deck_titus.py
+
+# JIRA文書管理規程（全10枚）— ACNブランドテンプレート系
 python build_deck.py --brand daicel
 python build_deck.py --brand acn
 
@@ -87,3 +94,23 @@ python build_slide.py --brand acn --template <Acc_PPT_IMP_StarterPack....potx>
 生成した `.pptx` はリポジトリにコミットしていません（`.gitignore` で除外）。
 `--brand acn` の生成物は Accenture のマスター・テーマ・ロゴを含むため、
 配布・公開時はテンプレートの利用条件を確認してください。
+
+
+## TITUS納品物スタイルの実測値
+
+`titus_kit.py` の版面は、元資料（Bジ／TITUS）から測った値をそのまま使っている。
+
+| 要素 | 位置・サイズ | 書式 |
+|---|---|---|
+| 資料区分 | x=0.67 y=0.11 w=9.69 h=0.38（下寄せ） | 18pt bold Meiryo UI |
+| タイトル | x=0.67 y=0.52 w=12.00 h=0.47 | 24pt bold |
+| 説明文 | x=0.67 y=0.99 w=11.51 h=0.61 | 16pt・最大2行 |
+| プロセスID | x=10.76 y=0.04 w=2.52 h=0.37 | 16pt |
+| ステータスタグ | w=1.34 h=0.31、右端 x=11.63、次 x=10.29 | 12pt・黒1pt罫 |
+| セクションバー | h=0.39 | accent4 `000088`・白18pt中央・黒0.75pt罫 |
+| フッター | x=7.58 y=7.24 ／ ページ番号 x=12.70 | 9pt |
+
+配色は元資料のテーマから：紺 `000088`（accent4）、青 `0064D2`、淡青 `E7EAF7`、
+赤 `FF0000`、緑 `009900`、橙 `FA9628`、紫 `644080`。
+ステータスタグと注記の淡色は、元資料と同じ `lumMod 20% / lumOff 80%` を
+`titus_kit.tint()` で再現している（決定事項 → `FEEAD4`、継続議論 → `E1D5EA`）。
