@@ -115,7 +115,8 @@ def foot(sl, page_no, date="2026/09/04"):
         align=PP_ALIGN.RIGHT)
 
 
-def page(prs, title, desc=None, tags=(), page_no=None, layout=1):
+def page(prs, title, desc=None, tags=(), page_no=None, layout=1,
+         title_size=22, date="2026/09/04"):
     """Content page on the template's タイトルとコンテンツ layout."""
     sl = prs.slides.add_slide(prs.slide_master.slide_layouts[layout])
     drop_placeholder(sl, 1)                     # the 28pt bullet body - we draw our own
@@ -130,11 +131,11 @@ def page(prs, title, desc=None, tags=(), page_no=None, layout=1):
     p.alignment = PP_ALIGN.LEFT
     r = p.add_run()
     r.text = title
-    style(r, 22, True, BLACK)
+    style(r, title_size, True, BLACK)
     if desc:
         say(sl, L, 1.02, 9.30, 0.56, desc, 12.5, False, MUTED, space=1.3)
     for i, (label, fill) in enumerate(reversed(list(tags))):
         cell(sl, R - 1.32 - i * 1.38, 1.02, 1.32, 0.30, label, 11, False, BLACK,
              fill, RULE, 0.75)
-    foot(sl, page_no)
+    foot(sl, page_no, date)
     return sl
