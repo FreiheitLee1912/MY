@@ -273,3 +273,14 @@ PCR raised per case）は元スライドと同じグリーン `4C9A2A`／`3D7C21
 
 和文版との差分：英字は和文より幅を取るため、見出しを20pt、
 シェブロンのラベルを8.5pt＋2行（`Spec / Review`、`Mass / Prod.` 等）に調整している。
+
+
+## Case Classification（英語版・ACN版面）
+
+`build_slide_classification_en.py`。テンプレート不要の1枚もの。`--brand` で配色切替
+（既定 daicel）。版面は `build_slide_timing_en.py` と同じ Accenture 2020 グリッド。
+
+元スライド「生準案件の分類」の4分類カードとプロダクトライフサイクルを英語化したもの。
+JIRA登録対象の②新規立上げ・③PCRはブランドブルーの見出し＋枠＋JIRAバッジで強調し、
+対象外の①ポテンシャル案件・④補給品はグレー見出し＋本文もグレーに落としている。
+ライフサイクルは元スライドどおり SOP前＝ブルー、量産＝グリーン、補給品／EOP＝グレー。
