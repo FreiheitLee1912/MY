@@ -63,7 +63,7 @@ LAT, DISPLAY = "Arial", "Arial Black"
 # ---- ACN grid ---------------------------------------------------------------
 L, R = 0.42, 12.92
 W = R - L
-TRACK_L = 1.78           # lane tracks start after the row labels
+TRACK_L = 1.30           # lane tracks start after the row labels
 N = 9
 PITCH = (R - TRACK_L) / N
 CHEV_W = PITCH - 0.045
@@ -74,8 +74,8 @@ SPEC_X = cx(2)           # Spec FIX      -> PGG / MGG trigger
 PLAN_X = cx(3)           # Development Plan -> INF trigger
 AXIS_Y = 3.92
 
-PHASES = ["Inquiry", "Proposal", "Spec\nReview", "Investment", "Prod.\nPrep",
-          "Validation", "Mass\nProd.", "Service\nParts", "EOP"]
+PHASES = ["Inquiry", "Proposal", "Spec\nReview", "Investment", "Mass-Prod\nPrep",
+          "Validation", "Mass\nProduction", "Service\nParts", "EOP"]
 
 
 # ---- helpers ----------------------------------------------------------------
@@ -177,14 +177,14 @@ def build(brand, output):
         r = p.add_run(); r.text = t; style(r, sz, b, c)
     say(sl, L + 0.22, 2.18, 11.9, 0.22,
         "Before registration each case is managed individually. After registration, "
-        "progress and issues are tracked in JIRA.", 10.5, False, MUTED)
+        "progress and issues are tracked in JIRA.", 11, False, MUTED)
 
     # --- lifecycle ---
     say(sl, L, 2.64, 4.0, 0.24, "Project lifecycle", 11.5, True, KEY)
     for txt, x0, x1, col in [("Pre-SOP", bx(4), bx(6), MID),
                              ("SOP", SOP_X - 0.34, SOP_X + 0.34, DARK),
                              ("Post-SOP", bx(6), bx(8), P["after_sop"])]:
-        say(sl, x0, 2.64, x1 - x0, 0.24, txt, 10.5, True, col, align=PP_ALIGN.CENTER)
+        say(sl, x0, 2.62, x1 - x0, 0.26, txt, 11, True, col, align=PP_ALIGN.CENTER)
     line(sl, SOP_X, 2.92, SOP_X, 5.44, DARK, 1.25, dash="dash")
 
     for i, name in enumerate(PHASES):
@@ -194,18 +194,21 @@ def build(brand, output):
             fill, fg, out = P["post_fills"][i - 6], P["post_fg"], None
         else:
             fill, fg, out = TINT, DARK, KEY
-        ch = shape(sl, MSO_SHAPE.CHEVRON, bx(i), 3.00, CHEV_W, 0.52,
+        ch = shape(sl, MSO_SHAPE.CHEVRON, bx(i), 3.00, CHEV_W, 0.46,
                    fill=fill, outline=out, ow=1.0)
+        # shallower arrow head: the default (0.5) eats half the height from each
+        # side, which is too much for 11pt English labels in this pitch
+        ch.adjustments[0] = 0.28
         for j, ln in enumerate(name.split("\n")):
             para = ch.text_frame.paragraphs[0] if j == 0 else ch.text_frame.add_paragraph()
             para.alignment = PP_ALIGN.CENTER
             para.line_spacing = 0.92
             r = para.add_run(); r.text = ln
-            style(r, 8.5, True, fg)
+            style(r, 11, True, fg)
 
     # --- milestone markers ---
     for x, label in [(SPEC_X, "Spec FIX"), (PLAN_X, "Development Plan")]:
-        say(sl, x - 1.15, 3.58, 2.30, 0.22, label, 10.5, True, DARK,
+        say(sl, x - 1.25, 3.54, 2.50, 0.24, label, 11, True, DARK,
             align=PP_ALIGN.CENTER)
     line(sl, TRACK_L, AXIS_Y, R, AXIS_Y, WARM_GREY, 0.75)
     for x in (SPEC_X, PLAN_X):
@@ -213,25 +216,25 @@ def build(brand, output):
 
     # --- swim lanes ---
     for name, y, trig in [("PGG / MGG", 4.64, SPEC_X), ("INF", 5.26, PLAN_X)]:
-        say(sl, L, y - 0.13, 1.28, 0.26, name, 13, True, BLACK,
+        say(sl, L, y - 0.14, 0.78, 0.28, name, 11.5, True, BLACK,
             align=PP_ALIGN.RIGHT, face=DISPLAY, anchor=MSO_ANCHOR.MIDDLE)
         line(sl, TRACK_L, y, trig, y, WARM_GREY, 1.25)
         line(sl, trig, y, R, y, KEY, 1.75)
         line(sl, trig, AXIS_Y, trig, y, LIGHT, 0.75, dash="sysDot")
         shape(sl, MSO_SHAPE.DIAMOND, trig - 0.075, y - 0.075, 0.15, 0.15, fill=KEY)
         for txt, x0, x1, sz, b, col in [
-                ("Managed individually", TRACK_L + 0.06, trig, 10, False, MUTED),
-                ("Managed in JIRA", trig, SOP_X, 11, True, MID),
-                ("PCR raised per case", SOP_X, R, 11, True, P["after_sop"])]:
-            say(sl, x0, y - 0.34, x1 - x0, 0.22, txt, sz, b, col, align=PP_ALIGN.CENTER)
+                ("Managed individually", TRACK_L + 0.06, trig, 11, False, MUTED),
+                ("Managed in JIRA", trig, SOP_X, 11.5, True, MID),
+                ("PCR raised per case", SOP_X, R, 11.5, True, P["after_sop"])]:
+            say(sl, x0, y - 0.36, x1 - x0, 0.24, txt, sz, b, col, align=PP_ALIGN.CENTER)
 
     # --- open items ---
     shape(sl, MSO_SHAPE.RECTANGLE, L, 5.62, W, 0.60, fill=P["open_fill"])
-    say(sl, L + 0.22, 5.74, 1.5, 0.22, "Open items", 11.5, True, P["open_fg"])
-    for txt, x0 in [("1  Rare cases in the registration decision", 1.95),
-                    ("2  Specs can still change after Spec FIX", 5.60),
-                    ("3  Treatment of new devices [TBC]", 9.25)]:
-        say(sl, x0, 5.74, 3.55, 0.40, txt, 10.5, False, INK)
+    say(sl, L + 0.22, 5.76, 1.6, 0.24, "Open items", 11.5, True, P["open_fg"])
+    for txt, x0 in [("1  Rare cases in the registration decision", 2.05),
+                    ("2  Specs can still change after Spec FIX", 5.70),
+                    ("3  Treatment of new devices [TBC]", 9.30)]:
+        say(sl, x0, 5.76, 3.60, 0.40, txt, 11, False, INK)
 
     # --- So What ---
     shape(sl, MSO_SHAPE.RECTANGLE, L, 6.32, W, 0.62, fill=P["sowhat_fill"])
@@ -241,9 +244,9 @@ def build(brand, output):
         "Fix the two registration triggers and split management responsibility at SOP",
         13, True, WHITE, anchor=MSO_ANCHOR.MIDDLE)
 
-    say(sl, L, 7.10, 6.0, 0.22,
-        "JIRA Registration Timing | Trigger definition", 9, False, MUTED)
-    say(sl, 12.30, 7.10, 0.62, 0.22, "8", 9, False, MUTED, align=PP_ALIGN.RIGHT)
+    say(sl, L, 7.08, 6.5, 0.24,
+        "JIRA Registration Timing | Trigger definition", 11, False, MUTED)
+    say(sl, 12.20, 7.08, 0.72, 0.24, "8", 11, False, MUTED, align=PP_ALIGN.RIGHT)
 
     sl.notes_slide.notes_text_frame.text = (
         "PGG/MGG cases are registered in JIRA at Spec FIX; INF cases at Development "

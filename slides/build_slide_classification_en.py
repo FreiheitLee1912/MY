@@ -119,21 +119,19 @@ def box(sl, x, y, w, h, text="", size=11, bold=False, fg=BLACK, fill=WHITE,
 # ---- the slide --------------------------------------------------------------
 CASES = [
     ("1", "Potential Cases", False,
-     "Manages customer themes before award. Organises customer needs, target "
-     "products and expected SOP, then decides whether the case moves to New "
-     "Launch based on the outcome of commercial and technical review."),
+     "Manages customer themes before award. Organises needs, target products "
+     "and expected SOP, then decides whether the case moves to New Launch."),
     ("2", "New Launch", True,
-     "Manages mass-production preparation for new models and new products once "
-     "the award is confirmed. Covers spec freeze, investment, design and "
-     "evaluation, PPAP and customer approval through to SOP."),
+     "Manages mass-production preparation once the award is confirmed — spec "
+     "freeze, investment, design and evaluation, PPAP and customer approval "
+     "through to SOP."),
     ("3", "PCR", True,
      "Manages changes to process, equipment, production site or parts for "
-     "products already in mass production. Runs proposal, plan circulation, "
-     "approval, implementation circulation and closure of the change."),
+     "products in mass production, from proposal and approval through to "
+     "closure."),
     ("4", "Service Parts", False,
      "Manages service parts whose supply obligation continues after the model "
-     "ends. Confirms demand outlook, inventory, capacity and last-production "
-     "timing through to agreement on supply termination."),
+     "ends — demand outlook, inventory, capacity and last-production timing."),
 ]
 
 PHASES = [("Inquiry", "pre"), ("Proposal\n/ Bid", "pre"), ("Investment", "pre"),
@@ -162,24 +160,28 @@ def build(brand, output):
         13, False, MUTED)
 
     # --- four case cards ---
-    say(sl, L, 1.78, 4.0, 0.24, "Case types", 11.5, True, KEY)
+    say(sl, L, 1.78, 4.0, 0.26, "Case types", 12, True, KEY)
     cw = (W - 3 * 0.22) / 4
-    cy = 2.06
+    cy = 2.10
     for i, (no, name, in_scope, body) in enumerate(CASES):
         x = L + i * (cw + 0.22)
         hd_fill = KEY if in_scope else GREY
-        box(sl, x, cy, cw, 0.40, f"{no}  {name}", 12.5, True, WHITE, hd_fill, None)
-        box(sl, x, cy + 0.40, cw, 1.52, "", fill=WHITE,
+        # header bar drawn empty: the title is set flush left so the JIRA badge
+        # can sit at the right without colliding with a centred title
+        box(sl, x, cy, cw, 0.44, "", fill=hd_fill, outline=None)
+        say(sl, x + 0.18, cy + 0.10, cw - 1.10, 0.26, f"{no}  {name}", 13, True,
+            WHITE, anchor=MSO_ANCHOR.MIDDLE)
+        box(sl, x, cy + 0.44, cw, 1.36, "", fill=WHITE,
             outline=KEY if in_scope else GREY_TINT, ow=1.25 if in_scope else 1.0)
-        say(sl, x + 0.14, cy + 0.54, cw - 0.28, 1.24, body, 8.5,
-            False, INK if in_scope else MUTED, space=1.3)
+        say(sl, x + 0.16, cy + 0.56, cw - 0.32, 1.12, body, 11,
+            False, INK if in_scope else MUTED, space=1.28)
         if in_scope:
-            box(sl, x + cw - 0.76, cy + 0.10, 0.66, 0.20, "JIRA", 7.5, True,
+            box(sl, x + cw - 0.86, cy + 0.10, 0.74, 0.24, "JIRA", 11, True,
                 WHITE, DARK, None)
 
     # --- product lifecycle ---
-    py = 4.20
-    say(sl, L, py, 5.0, 0.26, "PROCESS | Product lifecycle", 12.5, True, DARK,
+    py = 4.12
+    say(sl, L, py, 5.0, 0.28, "PROCESS | Product lifecycle", 13, True, DARK,
         face=DISPLAY)
 
     n = len(PHASES)
@@ -189,11 +191,11 @@ def build(brand, output):
 
     # milestone markers above the flow
     for i, label in [(2, "Case won"), (6, "Model end")]:
-        say(sl, bx(i) - 0.85, py + 0.36, 1.70, 0.22, label, 9.5, True, DARK,
+        say(sl, bx(i) - 0.95, py + 0.40, 1.90, 0.24, label, 11, True, DARK,
             align=PP_ALIGN.CENTER)
-        shape(sl, MSO_SHAPE.DIAMOND, bx(i) - 0.06, py + 0.62, 0.12, 0.12, fill=DARK)
+        shape(sl, MSO_SHAPE.DIAMOND, bx(i) - 0.06, py + 0.70, 0.12, 0.12, fill=DARK)
 
-    fy = py + 0.84
+    fy = py + 0.90
     for i, (name, kind) in enumerate(PHASES):
         if kind == "pre":
             fill, out, fg = TINT, KEY, DARK
@@ -201,14 +203,14 @@ def build(brand, output):
             fill, out, fg = POST_TINT, POST, POST
         else:
             fill, out, fg = GREY_TINT, None, GREY
-        ch = shape(sl, MSO_SHAPE.CHEVRON, bx(i), fy, chw, 0.62,
+        ch = shape(sl, MSO_SHAPE.CHEVRON, bx(i), fy, chw, 0.60,
                    fill=fill, outline=out, ow=1.0)
         for j, ln in enumerate(name.split("\n")):
             p = ch.text_frame.paragraphs[0] if j == 0 else ch.text_frame.add_paragraph()
             p.alignment = PP_ALIGN.CENTER
             p.line_spacing = 0.92
             r = p.add_run(); r.text = ln
-            style(r, 9.5, True, fg)
+            style(r, 11, True, fg)
 
     # legend
     ly = fy + 0.76
@@ -216,21 +218,21 @@ def build(brand, output):
             [(KEY, TINT, "Pre-SOP | New Launch, PPAP"),
              (POST, POST_TINT, "Post-SOP | PCR, Service Parts")]):
         x = L + i * 4.20
-        shape(sl, MSO_SHAPE.RECTANGLE, x, ly + 0.02, 0.26, 0.16,
+        shape(sl, MSO_SHAPE.RECTANGLE, x, ly + 0.03, 0.28, 0.18,
               fill=tint, outline=col, ow=1.0)
-        say(sl, x + 0.36, ly, 3.70, 0.22, txt, 9.5, False, MUTED)
+        say(sl, x + 0.40, ly, 3.90, 0.24, txt, 11, False, MUTED)
 
     # --- So What ---
-    shape(sl, MSO_SHAPE.RECTANGLE, L, 6.20, W, 0.62, fill=P["sowhat"])
-    say(sl, L + 0.30, 6.32, 1.6, 0.26, "So What", 13, True, WHITE,
+    shape(sl, MSO_SHAPE.RECTANGLE, L, 6.22, W, 0.64, fill=P["sowhat"])
+    say(sl, L + 0.30, 6.35, 1.6, 0.28, "So What", 13.5, True, WHITE,
         face=DISPLAY, anchor=MSO_ANCHOR.MIDDLE)
-    say(sl, L + 2.05, 6.32, 10.3, 0.26,
+    say(sl, L + 2.05, 6.35, 10.3, 0.28,
         "Keep JIRA to New Launch and PCR; Potential Cases and Service Parts are "
         "managed outside it",
         13, True, WHITE, anchor=MSO_ANCHOR.MIDDLE)
 
-    say(sl, L, 7.10, 7.0, 0.22,
-        "Case Classification | Scope of JIRA registration", 9, False, MUTED)
+    say(sl, L, 7.08, 7.0, 0.24,
+        "Case Classification | Scope of JIRA registration", 11, False, MUTED)
 
     sl.notes_slide.notes_text_frame.text = (
         "Production preparation manages four case types. New Launch and PCR are "
