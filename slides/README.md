@@ -255,10 +255,18 @@ C+行と影響度「大」行を濃紺で強調し、関与なしのC・D・X行
 
 ## 3. JIRA Registration Timing（英語版・ACN風）
 
-`build_slide_timing_en.py`。テンプレート不要の1枚もの。
+`build_slide_timing_en.py`。テンプレート不要の1枚もの。配色は `--brand` で切替。
 
-Accenture 2020 のグリッド（左右マージン0.42"／テキスト幅12.50"、罫線なしの
-Arial Black見出し、So Whatバンド）と配色（`A100FF` 系）で組む。
+```bash
+python build_slide_timing_en.py --brand daicel   # 既定
+python build_slide_timing_en.py --brand acn
+```
+
+版面は Accenture 2020 のグリッド（左右マージン0.42"／テキスト幅12.50"、
+罫線なしの Arial Black見出し、So Whatバンド）を両ブランドで共用する。
+daicel の配色はテンプレートのロゴから採ったブランドブルー `0096D8`、
+濃色 `00558C`、淡色 `E5F4FC`。SOP以降（Mass Prod.／Service Parts と
+PCR raised per case）は元スライドと同じグリーン `4C9A2A`／`3D7C21` を残している。
 スターターパックのマスターは使っていない — `>` マークは Accenture の商標のため
 再現していない。実マスターに載せたい場合は `.potx` を用意して
 `build_slide.py --brand acn` を使う。

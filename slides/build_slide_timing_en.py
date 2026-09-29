@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-"""3. JIRA Registration Timing — English, Accenture (ACN) style.
+"""3. JIRA Registration Timing — English, ACN layout in either palette.
 
 Usage:
-    python build_slide_timing_en.py [-o out.pptx]
+    python build_slide_timing_en.py --brand daicel [-o out.pptx]
+    python build_slide_timing_en.py --brand acn    [-o out.pptx]
 
 Layout follows the Accenture 2020 grid measured earlier in this project:
 0.42" side margins over a 12.50" text column, an Arial Black headline set flush
@@ -26,17 +27,36 @@ def C(h):
     return RGBColor(int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
 
 
-# ---- Accenture 2020 palette -------------------------------------------------
+# ---- palettes ---------------------------------------------------------------
 BLACK, WHITE = C("000000"), C("FFFFFF")
 INK = C("333333")
-KEY = C("A100FF")        # accent1 - Accenture Purple
-MID = C("7500C0")        # accent2
-DARK = C("460073")       # accent3
-LIGHT = C("BE82FF")      # accent5
-TINT = C("F4E9FF")
-WARM = C("E6E6DC")       # lt2
-WARM_GREY = C("96968C")  # dk2
-MUTED = C("70706A")
+
+BRANDS = {
+    # Accenture 2020 theme
+    "acn": dict(
+        key=C("A100FF"), mid=C("7500C0"), dark=C("460073"), light=C("BE82FF"),
+        tint=C("F4E9FF"), muted=C("70706A"),
+        out_fill=C("E6E6DC"), out_fg=C("70706A"),
+        post_fills=(C("A100FF"), C("7500C0")), post_fg=WHITE,
+        after_sop=C("460073"),
+        open_fill=C("E6E6DC"), open_fg=C("460073"),
+        sowhat_fill=C("A100FF"),
+        axis=C("96968C"), track=C("96968C"),
+    ),
+    # DAICEL: brand blue sampled from the standard template's own logo, with the
+    # source slide's green kept for the post-SOP phases so the colour semantics
+    # of the original Japanese slide survive the reskin.
+    "daicel": dict(
+        key=C("0096D8"), mid=C("0067A5"), dark=C("00558C"), light=C("9DC3E6"),
+        tint=C("E5F4FC"), muted=C("6B7280"),
+        out_fill=C("E7E7E7"), out_fg=C("767676"),
+        post_fills=(C("4C9A2A"), C("3D7C21")), post_fg=WHITE,
+        after_sop=C("3D7C21"),
+        open_fill=C("FBF4E0"), open_fg=C("00558C"),
+        sowhat_fill=C("0096D8"),
+        axis=C("A6A6A6"), track=C("A6A6A6"),
+    ),
+}
 
 LAT, DISPLAY = "Arial", "Arial Black"
 
@@ -125,7 +145,12 @@ def shape(sl, kind, x, y, w, h, fill=None, outline=None, ow=1.0):
 
 
 # ---- the slide --------------------------------------------------------------
-def build(output):
+def build(brand, output):
+    P = BRANDS[brand]
+    KEY, MID, DARK, LIGHT = P["key"], P["mid"], P["dark"], P["light"]
+    TINT, MUTED = P["tint"], P["muted"]
+    WARM, WARM_GREY = P["out_fill"], P["axis"]
+
     prs = Presentation()
     prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
     sl = prs.slides.add_slide(prs.slide_layouts[6])      # blank
@@ -158,15 +183,15 @@ def build(output):
     say(sl, L, 2.64, 4.0, 0.24, "Project lifecycle", 11.5, True, KEY)
     for txt, x0, x1, col in [("Pre-SOP", bx(4), bx(6), MID),
                              ("SOP", SOP_X - 0.34, SOP_X + 0.34, DARK),
-                             ("Post-SOP", bx(6), bx(8), DARK)]:
+                             ("Post-SOP", bx(6), bx(8), P["after_sop"])]:
         say(sl, x0, 2.64, x1 - x0, 0.24, txt, 10.5, True, col, align=PP_ALIGN.CENTER)
     line(sl, SOP_X, 2.92, SOP_X, 5.44, DARK, 1.25, dash="dash")
 
     for i, name in enumerate(PHASES):
         if i in (0, 1, 8):
-            fill, fg, out = WARM, MUTED, None
+            fill, fg, out = P["out_fill"], P["out_fg"], None
         elif i in (6, 7):
-            fill, fg, out = (KEY if i == 6 else MID), WHITE, None
+            fill, fg, out = P["post_fills"][i - 6], P["post_fg"], None
         else:
             fill, fg, out = TINT, DARK, KEY
         ch = shape(sl, MSO_SHAPE.CHEVRON, bx(i), 3.00, CHEV_W, 0.52,
@@ -197,19 +222,19 @@ def build(output):
         for txt, x0, x1, sz, b, col in [
                 ("Managed individually", TRACK_L + 0.06, trig, 10, False, MUTED),
                 ("Managed in JIRA", trig, SOP_X, 11, True, MID),
-                ("PCR raised per case", SOP_X, R, 11, True, DARK)]:
+                ("PCR raised per case", SOP_X, R, 11, True, P["after_sop"])]:
             say(sl, x0, y - 0.34, x1 - x0, 0.22, txt, sz, b, col, align=PP_ALIGN.CENTER)
 
     # --- open items ---
-    shape(sl, MSO_SHAPE.RECTANGLE, L, 5.62, W, 0.60, fill=WARM)
-    say(sl, L + 0.22, 5.74, 1.5, 0.22, "Open items", 11.5, True, DARK)
+    shape(sl, MSO_SHAPE.RECTANGLE, L, 5.62, W, 0.60, fill=P["open_fill"])
+    say(sl, L + 0.22, 5.74, 1.5, 0.22, "Open items", 11.5, True, P["open_fg"])
     for txt, x0 in [("1  Rare cases in the registration decision", 1.95),
                     ("2  Specs can still change after Spec FIX", 5.60),
                     ("3  Treatment of new devices [TBC]", 9.25)]:
         say(sl, x0, 5.74, 3.55, 0.40, txt, 10.5, False, INK)
 
     # --- So What ---
-    shape(sl, MSO_SHAPE.RECTANGLE, L, 6.32, W, 0.62, fill=KEY)
+    shape(sl, MSO_SHAPE.RECTANGLE, L, 6.32, W, 0.62, fill=P["sowhat_fill"])
     say(sl, L + 0.30, 6.44, 1.6, 0.26, "So What", 13, True, WHITE,
         face=DISPLAY, anchor=MSO_ANCHOR.MIDDLE)
     say(sl, L + 2.05, 6.44, 10.3, 0.26,
@@ -233,5 +258,7 @@ def build(output):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("-o", "--output", default="jira_timing_en_acn.pptx")
-    build(ap.parse_args().output)
+    ap.add_argument("--brand", choices=sorted(BRANDS), default="daicel")
+    ap.add_argument("-o", "--output")
+    a = ap.parse_args()
+    build(a.brand, a.output or f"jira_timing_en_{a.brand}.pptx")
