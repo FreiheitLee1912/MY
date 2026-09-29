@@ -251,3 +251,17 @@ TITUS版は Meiryo UI のまま影響を受けない）。
 
 C+行と影響度「大」行を濃紺で強調し、関与なしのC・D・X行はグレー文字にして
 本ルールの対象範囲が一目で分かるようにしている。
+
+
+## 3. JIRA Registration Timing（英語版・ACN風）
+
+`build_slide_timing_en.py`。テンプレート不要の1枚もの。
+
+Accenture 2020 のグリッド（左右マージン0.42"／テキスト幅12.50"、罫線なしの
+Arial Black見出し、So Whatバンド）と配色（`A100FF` 系）で組む。
+スターターパックのマスターは使っていない — `>` マークは Accenture の商標のため
+再現していない。実マスターに載せたい場合は `.potx` を用意して
+`build_slide.py --brand acn` を使う。
+
+和文版との差分：英字は和文より幅を取るため、見出しを20pt、
+シェブロンのラベルを8.5pt＋2行（`Spec / Review`、`Mass / Prod.` 等）に調整している。
