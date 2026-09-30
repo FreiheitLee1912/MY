@@ -120,7 +120,7 @@ def build(icon_dir, output):
     rect(sl, bx, 0.32, bw, 0.84, None, RULE, 1.0)
     rect(sl, bx, 0.32, 0.06, 0.84, PURPLE)
     say(sl, bx + 0.14, 0.44, bw - 0.28, 0.22, "TARGET MILESTONE",
-        10.5, True, PURPLE, align=PP_ALIGN.CENTER, spacing=1.0)
+        11, True, PURPLE, align=PP_ALIGN.CENTER, spacing=1.0)
     say(sl, bx + 0.14, 0.70, bw - 0.28, 0.40,
         "GLOBAL PRODUCTION\nREADINESS MEETING",
         11.5, True, NAVY, align=PP_ALIGN.CENTER, space=1.15)
