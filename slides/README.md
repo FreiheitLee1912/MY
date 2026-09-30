@@ -297,3 +297,22 @@ JIRA登録対象の②新規立上げ・③PCRはブランドブルーの見出�
   `Investment` / `Mass Production` が折り返さないようにした
 - Classification: カード本文を短縮し、見出しは左寄せにして
   右端の JIRA バッジと衝突しないようにした
+
+
+## JIRA Workstreams（英語版・2ワークストリーム）
+
+`build_slide_workstreams_en.py`。元の3カラム版から 03 Registration and
+integration rules を外し、残る2つに幅を配分し直したもの。
+
+```bash
+python build_slide_workstreams_en.py --icons <アイコンPNGのディレクトリ>
+```
+
+アイコンは `react-icons` を SVG で描画し `sharp` で512px PNG化したもの
+（`HiOutlinePresentationChartBar` / `HiOutlineDocumentCheck`）を読み込む。
+ディレクトリに PNG が無ければアイコンを省いて描画する。
+
+配色は元スライドどおり パープル `A100FF`、ネイビー `101828`、
+本文 `1F2937`、補助 `6B7280`、罫 `D0D5DD`。
+見出しは元スライドの実寸（約20pt相当）に合わせて21ptとし、
+左カラム9.30"に1行で収まるようにしている。
