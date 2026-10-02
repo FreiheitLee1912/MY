@@ -135,14 +135,14 @@ JA = dict(
            ("拠点", "Site", "設備・投資の検討に落とす")],
     asis_label="As is", asis_cap="いま共有して\nいる文書",
     tobe_label="To be", tobe_cap="これから共有\nする文書",
-    asis=[([("バランス（予算）", BUDGET), ("バランス（月次）", SLOW)], None),
-          ([("バランス（予算）", BUDGET), ("バランス（月次）", SLOW)], None),
-          ([("予算販売計画（予算レンジのみ）", WARN)],
-           "生準との連携がなく、レンジ外の将来案件は見えない")],
-    tobe=[([("バランス（予算）", BUDGET), ("バランス（日次）", FAST)], None),
-          ([("バランス（予算）", BUDGET), ("バランス（日次）", FAST)], None),
-          ([("バランス（予算）", BUDGET), ("バランス（日次）", FAST)],
-           "3者が同じものを同じ鮮度で見る")],
+    asis=[(0, 2, "マーケ・生準で共通",
+           [("バランス（予算）", BUDGET), ("バランス（月次）", SLOW)], None),
+          (2, 1, "拠点だけ別もの", [("予算販売計画", WARN)],
+           "予算レンジ内のみ。レンジ外の将来案件は見えない")],
+    tobe=[(0, 2, "マーケ・生準で共通",
+           [("バランス（予算）", BUDGET), ("バランス（日次）", FAST)], None),
+          (2, 1, "拠点も同じものに",
+           [("バランス（予算）", BUDGET), ("バランス（日次）", FAST)], None)],
     issues_title="As is の課題",
     issues=["生準が販売計画の変化を把握するまでに時間差がある",
             "拠点はレンジ内の案件しか見えず、投資の検討に織り込めない"],
@@ -173,15 +173,14 @@ EN = dict(
            ("Site", "Plant", "Turns it into equipment and capex")],
     asis_label="As is", asis_cap="What they\nshare today",
     tobe_label="To be", tobe_cap="What they\nwill share",
-    asis=[([("Balance (Budget)", BUDGET), ("Balance (Monthly)", SLOW)], None),
-          ([("Balance (Budget)", BUDGET), ("Balance (Monthly)", SLOW)], None),
-          ([("Budget sales plan", WARN)],
-           "Budget range only; no link to Prod. Prep., so out-of-range cases "
-           "stay invisible")],
-    tobe=[([("Balance (Budget)", BUDGET), ("Balance (Daily)", FAST)], None),
-          ([("Balance (Budget)", BUDGET), ("Balance (Daily)", FAST)], None),
-          ([("Balance (Budget)", BUDGET), ("Balance (Daily)", FAST)],
-           "All three see the same file at the same freshness")],
+    asis=[(0, 2, "Shared by Marketing & Prod. Prep.",
+           [("Balance (Budget)", BUDGET), ("Balance (Monthly)", SLOW)], None),
+          (2, 1, "Site has something else", [("Budget sales plan", WARN)],
+           "Budget range only \u2014 out-of-range cases stay invisible")],
+    tobe=[(0, 2, "Shared by Marketing & Prod. Prep.",
+           [("Balance (Budget)", BUDGET), ("Balance (Daily)", FAST)], None),
+          (2, 1, "Site now gets the same",
+           [("Balance (Budget)", BUDGET), ("Balance (Daily)", FAST)], None)],
     issues_title="Issues with As is",
     issues=["Production preparation sees sales-plan changes only after a lag",
             "Sites see only in-range cases and cannot factor them into capex"],
@@ -206,14 +205,14 @@ EN = dict(
 
 # 版面は共通、折り返しに効く寸法だけ言語で持ち替える
 METRICS = dict(
-    ja=dict(em=0.158, blk_y=1.52, blk_h=3.78, node_y=1.76, node_h=0.66,
-            node_size=15, head_size=20, as_y=2.70, as_h=1.14, to_y=3.96,
-            to_h=1.24, exp_y=5.46, exp_h=1.10, sw_y=6.68, sw_h=0.48,
-            foot_y=7.24),
-    en=dict(em=0.085, blk_y=1.48, blk_h=3.86, node_y=1.70, node_h=0.62,
-            node_size=14, head_size=18, as_y=2.62, as_h=1.12, to_y=3.84,
-            to_h=1.36, exp_y=5.46, exp_h=1.10, sw_y=6.68, sw_h=0.48,
-            foot_y=7.24),
+    ja=dict(em=0.158, blk_y=1.52, blk_h=3.90, node_y=1.72, node_h=0.60,
+            node_size=15, head_size=20, as_y=2.60, as_h=1.38, to_y=4.04,
+            to_h=1.24, exp_y=5.52, exp_h=1.10, sw_y=6.70, sw_h=0.46,
+            foot_y=7.22),
+    en=dict(em=0.085, blk_y=1.48, blk_h=3.94, node_y=1.68, node_h=0.60,
+            node_size=14, head_size=18, as_y=2.58, as_h=1.40, to_y=4.04,
+            to_h=1.24, exp_y=5.52, exp_h=1.10, sw_y=6.70, sw_h=0.46,
+            foot_y=7.22),
 )
 
 GUT = 1.38                      # 行ラベルの左ガター
@@ -222,21 +221,29 @@ COLW = 3.30
 CGAP = (R - CX0 - COLW * 3) / 2
 
 
-def band(sl, y, h, label, caption, label_fill, fill, rows):
-    rect(sl, L + 0.10, y, W - 0.20, h, fill)
+def band(sl, y, h, label, caption, label_fill, fill, cells):
+    """cells: (開始列, 列スパン, セル見出し, チップ, 注記) の並び。
+
+    マーケと生準は同じ文書を見ているので、2列ぶんを1セルにまとめて描く。
+    """
+    rect(sl, L, y, W, h, fill)
     chip(sl, L + 0.22, y + 0.16, GUT - 0.20, 0.34, label, label_fill, 13)
     say(sl, L + 0.22, y + 0.56, GUT - 0.20, 0.42, caption, 11, False, GREY,
         align=PP_ALIGN.CENTER, space=1.15)
-    for i, (chips, note) in enumerate(rows):
-        cx = CX0 + i * (COLW + CGAP)
-        cw = 2.96 if len(chips) == 1 else 2.40
-        cy = y + 0.16
+    for col, span, head, chips, note in cells:
+        cx = CX0 + col * (COLW + CGAP)
+        cellw = span * COLW + (span - 1) * CGAP
+        rect(sl, cx, y + 0.10, cellw, h - 0.20, WHITE, RULE, 0.75)
+        say(sl, cx, y + 0.18, cellw, 0.22, head, 11, True, DARK,
+            align=PP_ALIGN.CENTER)
+        cw = 3.60 if span > 1 else 2.90
+        cy = y + 0.44
         for text, (cf, fg, oc) in chips:
-            chip(sl, cx + (COLW - cw) / 2, cy, cw, 0.30, text, cf, 11, fg,
+            chip(sl, cx + (cellw - cw) / 2, cy, cw, 0.30, text, cf, 11, fg,
                  outline=oc, ow=1.0)
             cy += 0.38
         if note:
-            say(sl, cx + 0.06, cy - 0.04, COLW - 0.12, 0.44, note, 11, False,
+            say(sl, cx + 0.10, cy - 0.02, cellw - 0.20, 0.46, note, 11, False,
                 GREY, align=PP_ALIGN.CENTER, space=1.15)
 
 
