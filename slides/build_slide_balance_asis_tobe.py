@@ -2,11 +2,14 @@
 """現状と課題｜需給バランス — As is / To be を1つの流れで比較する。
 
 Usage:
-    python build_slide_balance_asis_tobe.py [-o out.pptx]
+    python build_slide_balance_asis_tobe.py [--lang ja|en] [-o out.pptx]
 
 As is と To be の違いは「3者が共有している文書」だけなので、
 マーケ → 生準 → 拠点 の流れは1列だけ描き、その下に As is の共有文書、
 To be の共有文書を重ねて差分を1か所で読ませる。
+
+日英で版面は同じ。英文は折り返し幅が違うので、帯の高さと折り返し見積りだけを
+言語ごとに持ち替える（METRICS）。
 """
 import argparse
 import math
@@ -39,16 +42,17 @@ FAINT = C("F4F5F3")
 RULE = C("D0D5DD")
 WHITE = C("FFFFFF")
 
-JP = "Meiryo"
 L, R = 0.42, 12.92
 W = R - L
+LH11 = 0.20                   # 11pt / 行送り1.25 の1行
 
-EM11 = 0.153          # 11pt Meiryo の全角1文字幅
-EM_EST = 0.158        # 折り返し見積り用（安全側）
-LH11 = 0.20           # 11pt / 行送り1.25 の1行
+BODY = "Meiryo"              # build() が言語に応じて差し替える
+DISPLAY = "Meiryo"
+EM_EST = 0.158               # 折り返し見積りの1文字幅（安全側）
 
 
-def style(run, size, bold=False, color=INK, face=JP, spacing=None):
+def style(run, size, bold=False, color=INK, face=None, spacing=None):
+    face = face or BODY
     f = run.font
     f.size, f.bold, f.name = Pt(size), bold, face
     f.color.rgb = color
@@ -63,7 +67,7 @@ def style(run, size, bold=False, color=INK, face=JP, spacing=None):
 
 
 def say(sl, x, y, w, h, text, size, bold=False, color=INK, align=PP_ALIGN.LEFT,
-        anchor=MSO_ANCHOR.TOP, space=None, spacing=None):
+        anchor=MSO_ANCHOR.TOP, space=None, spacing=None, face=None):
     tb = sl.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
     tf = tb.text_frame
     tf.word_wrap = True
@@ -75,23 +79,7 @@ def say(sl, x, y, w, h, text, size, bold=False, color=INK, align=PP_ALIGN.LEFT,
         if space:
             p.line_spacing = space
         r = p.add_run(); r.text = ln
-        style(r, size, bold, color, spacing=spacing)
-    return tf
-
-
-def rich(sl, x, y, w, h, parts, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP,
-         space=1.25):
-    tb = sl.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
-    tf = tb.text_frame
-    tf.word_wrap = True
-    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
-    tf.vertical_anchor = anchor
-    p = tf.paragraphs[0]
-    p.alignment = align
-    p.line_spacing = space
-    for text, size, bold, color in parts:
-        r = p.add_run(); r.text = text
-        style(r, size, bold, color)
+        style(r, size, bold, color, face, spacing=spacing)
     return tf
 
 
@@ -130,144 +118,204 @@ def bullet(sl, x, y, w, text, marker, color=INK):
     return h
 
 
-NODES = [
-    ("マーケ", "Marketing", "HQ営業が販売計画を日々更新"),
-    ("生準", "Production Prep.", "需給を見て供給可否を判断"),
-    ("拠点", "Site", "設備・投資の検討に落とす"),
-]
+# --- チップの色づかい（予算は共通、月次=遅い、日次=速い、拠点限定=警告） ---
+BUDGET = (GREEN_PALE, GREEN, GREEN)
+SLOW = (AMBER_FILL, AMBER, AMBER)
+FAST = (PALE, DARK, BLUE)
+WARN = (RED_FILL, RED, RED)
 
-# (チップ, 塗り, 文字色, 枠) の並び＋注記
-ASIS = [
-    ([("バランス（予算）", GREEN_PALE, GREEN, GREEN),
-      ("バランス（月次）", AMBER_FILL, AMBER, AMBER)], None),
-    ([("バランス（予算）", GREEN_PALE, GREEN, GREEN),
-      ("バランス（月次）", AMBER_FILL, AMBER, AMBER)], None),
-    ([("予算販売計画（予算レンジのみ）", RED_FILL, RED, RED)],
-     "生準との連携がなく、レンジ外の将来案件は見えない"),
-]
-TOBE = [
-    ([("バランス（予算）", GREEN_PALE, GREEN, GREEN),
-      ("バランス（日次）", PALE, DARK, BLUE)], None),
-    ([("バランス（予算）", GREEN_PALE, GREEN, GREEN),
-      ("バランス（日次）", PALE, DARK, BLUE)], None),
-    ([("バランス（予算）", GREEN_PALE, GREEN, GREEN),
-      ("バランス（日次）", PALE, DARK, BLUE)], "3者が同じものを同じ鮮度で見る"),
-]
+JA = dict(
+    eyebrow="① 現状と課題 ｜ 需給バランス",
+    headline="違いは「3者が共有する文書」だけ — 月次を日次に変え、拠点にも同じものを配る",
+    sub="販売計画はHQ営業が日々更新しているが、生準・拠点が変化点を確認するまでに"
+        "時間差がある。流れそのものは変わらない。",
+    flow_label="情報の流れ\n（共通）",
+    nodes=[("マーケ", "Marketing", "HQ営業が販売計画を日々更新"),
+           ("生準", "Production Prep.", "需給を見て供給可否を判断"),
+           ("拠点", "Site", "設備・投資の検討に落とす")],
+    asis_label="As is", asis_cap="いま共有して\nいる文書",
+    tobe_label="To be", tobe_cap="これから共有\nする文書",
+    asis=[([("バランス（予算）", BUDGET), ("バランス（月次）", SLOW)], None),
+          ([("バランス（予算）", BUDGET), ("バランス（月次）", SLOW)], None),
+          ([("予算販売計画（予算レンジのみ）", WARN)],
+           "生準との連携がなく、レンジ外の将来案件は見えない")],
+    tobe=[([("バランス（予算）", BUDGET), ("バランス（日次）", FAST)], None),
+          ([("バランス（予算）", BUDGET), ("バランス（日次）", FAST)], None),
+          ([("バランス（予算）", BUDGET), ("バランス（日次）", FAST)],
+           "3者が同じものを同じ鮮度で見る")],
+    issues_title="As is の課題",
+    issues=["生準が販売計画の変化を把握するまでに時間差がある",
+            "拠点はレンジ内の案件しか見えず、投資の検討に織り込めない"],
+    gains_title="To be でできること",
+    gains=["HQと拠点の両方が、予算レンジ外を含む将来需要を確認できる",
+           "大型案件や数量変動を早期に把握し、HQ・拠点で連携して供給対応を検討できる"],
+    sowhat="仕組みを作り替える話ではなく、配る文書を「日次バランス」に揃えるだけで"
+           "時間差と拠点の情報格差は解消する",
+    foot="現状と課題｜需給バランス",
+    notes="需給バランスの As is / To be。マーケ→生準→拠点という情報の流れ自体は変わらず、"
+          "差分は3者が共有している文書だけなので、流れは1列だけ描いて下に As is と To be の"
+          "共有文書を重ねている。As is ではマーケと生準が月次バランスを共有し、拠点は予算"
+          "レンジ内の予算販売計画しか持たない。そのため生準が販売計画の変化を把握するまでに"
+          "時間差が生じ、拠点はレンジ外の将来案件を投資検討に織り込めない。To be は3者が同じ"
+          "日次バランスを同じ鮮度で見る状態。HQと拠点の双方が予算レンジ外を含む将来需要を"
+          "確認でき、大型案件や数量変動を早期に把握して供給対応を検討できる。",
+)
 
-ISSUES = ["生準が販売計画の変化を把握するまでに時間差がある",
-          "拠点はレンジ内の案件しか見えず、投資の検討に織り込めない"]
-GAINS = ["HQと拠点の両方が、予算レンジ外を含む将来需要を確認できる",
-         "大型案件や数量変動を早期に把握し、HQ・拠点で連携して供給対応を検討できる"]
+EN = dict(
+    eyebrow="1. CURRENT STATE & ISSUES ｜ SUPPLY-DEMAND BALANCE",
+    headline="Only the shared document changes \u2014 monthly becomes daily, "
+             "and the site gets it",
+    sub="HQ sales updates the plan daily, but production preparation and the "
+        "sites see the change only later. The flow itself does not change.",
+    flow_label="Information flow\n(unchanged)",
+    nodes=[("Marketing", "HQ Sales", "Updates the sales plan daily"),
+           ("Production Prep.", "Supply planning", "Judges whether supply can be met"),
+           ("Site", "Plant", "Turns it into equipment and capex")],
+    asis_label="As is", asis_cap="What they\nshare today",
+    tobe_label="To be", tobe_cap="What they\nwill share",
+    asis=[([("Balance (Budget)", BUDGET), ("Balance (Monthly)", SLOW)], None),
+          ([("Balance (Budget)", BUDGET), ("Balance (Monthly)", SLOW)], None),
+          ([("Budget sales plan", WARN)],
+           "Budget range only; no link to Prod. Prep., so out-of-range cases "
+           "stay invisible")],
+    tobe=[([("Balance (Budget)", BUDGET), ("Balance (Daily)", FAST)], None),
+          ([("Balance (Budget)", BUDGET), ("Balance (Daily)", FAST)], None),
+          ([("Balance (Budget)", BUDGET), ("Balance (Daily)", FAST)],
+           "All three see the same file at the same freshness")],
+    issues_title="Issues with As is",
+    issues=["Production preparation sees sales-plan changes only after a lag",
+            "Sites see only in-range cases and cannot factor them into capex"],
+    gains_title="What To be enables",
+    gains=["HQ and sites both see future demand, including out-of-range cases",
+           "Volume swings are caught early for joint HQ-site supply planning"],
+    sowhat="Not a system rebuild — one shared daily balance removes the lag and "
+           "the site's information gap",
+    foot="Current state & issues | Supply-demand balance",
+    notes="As is / To be for the supply-demand balance. The information flow "
+          "Marketing to Production Preparation to Site does not change; the only "
+          "difference is the document the three share, so the flow is drawn once "
+          "and the As is and To be documents are stacked beneath it. Today "
+          "Marketing and Production Preparation share a monthly balance while the "
+          "site holds only a budget sales plan limited to the budget range. "
+          "Production preparation therefore sees sales-plan changes only after a "
+          "lag, and sites cannot factor out-of-range future cases into capex "
+          "decisions. In To be all three see the same daily balance at the same "
+          "freshness, so HQ and sites both see future demand including "
+          "out-of-range cases and can plan supply together early.",
+)
+
+# 版面は共通、折り返しに効く寸法だけ言語で持ち替える
+METRICS = dict(
+    ja=dict(em=0.158, blk_y=1.52, blk_h=3.78, node_y=1.76, node_h=0.66,
+            node_size=15, head_size=20, as_y=2.70, as_h=1.14, to_y=3.96,
+            to_h=1.24, exp_y=5.46, exp_h=1.10, sw_y=6.68, sw_h=0.48,
+            foot_y=7.24),
+    en=dict(em=0.085, blk_y=1.48, blk_h=3.86, node_y=1.70, node_h=0.62,
+            node_size=14, head_size=18, as_y=2.62, as_h=1.12, to_y=3.84,
+            to_h=1.36, exp_y=5.46, exp_h=1.10, sw_y=6.68, sw_h=0.48,
+            foot_y=7.24),
+)
 
 GUT = 1.38                      # 行ラベルの左ガター
 CX0 = L + GUT + 0.18
 COLW = 3.30
 CGAP = (R - CX0 - COLW * 3) / 2
 
-BLK_Y, BLK_H = 1.52, 3.82
-NODE_Y, NODE_H = 1.76, 0.66
-AS_Y, BAND_H = 2.70, 1.20
-TO_Y = 4.00
-EXP_Y, EXP_H = 5.46, 1.10
-SW_Y, SW_H = 6.68, 0.48
 
-
-def band(sl, y, label, caption, label_fill, fill, rows):
-    rect(sl, L + 0.10, y, W - 0.20, BAND_H, fill)
+def band(sl, y, h, label, caption, label_fill, fill, rows):
+    rect(sl, L + 0.10, y, W - 0.20, h, fill)
     chip(sl, L + 0.22, y + 0.16, GUT - 0.20, 0.34, label, label_fill, 13)
-    say(sl, L + 0.22, y + 0.56, GUT - 0.20, 0.40, caption, 11, False, GREY,
+    say(sl, L + 0.22, y + 0.56, GUT - 0.20, 0.42, caption, 11, False, GREY,
         align=PP_ALIGN.CENTER, space=1.15)
     for i, (chips, note) in enumerate(rows):
         cx = CX0 + i * (COLW + CGAP)
         cw = 2.96 if len(chips) == 1 else 2.40
         cy = y + 0.16
-        for text, cf, fg, oc in chips:
+        for text, (cf, fg, oc) in chips:
             chip(sl, cx + (COLW - cw) / 2, cy, cw, 0.30, text, cf, 11, fg,
                  outline=oc, ow=1.0)
             cy += 0.38
         if note:
-            say(sl, cx + 0.10, cy - 0.04, COLW - 0.20, 0.40, note, 11, False,
+            say(sl, cx + 0.06, cy - 0.04, COLW - 0.12, 0.44, note, 11, False,
                 GREY, align=PP_ALIGN.CENTER, space=1.15)
 
 
-def build(output):
+def build(output, lang):
+    global BODY, DISPLAY, EM_EST
+    T = JA if lang == "ja" else EN
+    M = METRICS[lang]
+    BODY = "Meiryo" if lang == "ja" else "Arial"
+    DISPLAY = "Meiryo" if lang == "ja" else "Arial Black"
+    EM_EST = M["em"]
+
     prs = Presentation()
     prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
     sl = prs.slides.add_slide(prs.slide_layouts[6])
 
     # --- ヘッダー ---
-    say(sl, L, 0.36, 9.5, 0.26, "① 現状と課題 ｜ 需給バランス", 11.5, True, BLUE,
-        spacing=1.0)
-    say(sl, L, 0.62, W, 0.56,
-        "違いは「3者が共有する文書」だけ — 月次を日次に変え、拠点にも同じものを配る",
-        20, True, INK, anchor=MSO_ANCHOR.MIDDLE)
-    say(sl, L, 1.20, 12.2, 0.26,
-        "販売計画はHQ営業が日々更新しているが、生準・拠点が変化点を確認するまでに"
-        "時間差がある。流れそのものは変わらない。",
-        12.5, False, GREY)
+    say(sl, L, 0.36, 10.5, 0.26, T["eyebrow"], 11.5, True, BLUE, spacing=1.0)
+    say(sl, L, 0.62, W, 0.56, T["headline"], M["head_size"], True, INK,
+        anchor=MSO_ANCHOR.MIDDLE, face=DISPLAY)
+    say(sl, L, 1.20, 12.2, 0.26, T["sub"], 12.5, False, GREY)
 
     # --- 比較ブロック ---
-    rect(sl, L, BLK_Y, W, BLK_H, WHITE, RULE, 0.75)
+    rect(sl, L, M["blk_y"], W, M["blk_h"], WHITE, RULE, 0.75)
 
-    # ノード行（As is / To be 共通）
-    say(sl, L + 0.22, NODE_Y + 0.12, GUT - 0.20, 0.42, "情報の流れ\n（共通）", 11,
-        True, DARK, align=PP_ALIGN.CENTER, space=1.15)
-    for i, (jp, en, role) in enumerate(NODES):
+    ny, nh = M["node_y"], M["node_h"]
+    say(sl, L + 0.22, ny + 0.12, GUT - 0.20, 0.44, T["flow_label"], 11, True,
+        DARK, align=PP_ALIGN.CENTER, space=1.15)
+    for i, (main, sub, role) in enumerate(T["nodes"]):
         cx = CX0 + i * (COLW + CGAP)
-        rect(sl, cx, NODE_Y, COLW, NODE_H, DARK)
-        say(sl, cx, NODE_Y + 0.07, COLW, 0.26, jp, 15, True, WHITE,
+        rect(sl, cx, ny, COLW, nh, DARK)
+        say(sl, cx, ny + 0.06, COLW, 0.26, main, M["node_size"], True, WHITE,
             align=PP_ALIGN.CENTER)
-        say(sl, cx, NODE_Y + 0.36, COLW, 0.22, en, 11, False, PALE,
+        say(sl, cx, ny + nh - 0.28, COLW, 0.22, sub, 11, False, PALE,
             align=PP_ALIGN.CENTER)
-        say(sl, cx, NODE_Y + NODE_H + 0.06, COLW, 0.20, role, 11, False, GREY,
+        say(sl, cx, ny + nh + 0.05, COLW, 0.20, role, 11, False, GREY,
             align=PP_ALIGN.CENTER)
-        if i < len(NODES) - 1:
-            ax = cx + COLW + 0.06
-            rect(sl, ax, NODE_Y + 0.20, CGAP - 0.12, 0.30, BLUE,
-                 shape=MSO_SHAPE.RIGHT_ARROW)
+        if i < len(T["nodes"]) - 1:
+            rect(sl, cx + COLW + 0.06, ny + (nh - 0.30) / 2, CGAP - 0.12, 0.30,
+                 BLUE, shape=MSO_SHAPE.RIGHT_ARROW)
 
-    band(sl, AS_Y, "As is", "いま共有して\nいる文書", SLATE, FAINT, ASIS)
-    band(sl, TO_Y, "To be", "これから共有\nする文書", DARK, PALE, TOBE)
+    band(sl, M["as_y"], M["as_h"], T["asis_label"], T["asis_cap"], SLATE,
+         FAINT, T["asis"])
+    band(sl, M["to_y"], M["to_h"], T["tobe_label"], T["tobe_cap"], DARK,
+         PALE, T["tobe"])
 
     # --- 説明 ---
+    ey, eh = M["exp_y"], M["exp_h"]
     bw = (W - 0.24) / 2
-    for i, (title, items, accent, fill) in enumerate(
-            [("As is の課題", ISSUES, RED, RED_FILL),
-             ("To be でできること", GAINS, DARK, PALE)]):
+    for i, (title, items, accent) in enumerate(
+            [(T["issues_title"], T["issues"], RED),
+             (T["gains_title"], T["gains"], DARK)]):
         bx = L + i * (bw + 0.24)
-        rect(sl, bx, EXP_Y, bw, EXP_H, WHITE, RULE, 0.75)
-        rect(sl, bx, EXP_Y, 0.07, EXP_H, accent)
-        say(sl, bx + 0.22, EXP_Y + 0.10, bw - 0.40, 0.22, title, 11.5, True,
-            accent)
-        iy = EXP_Y + 0.36
+        rect(sl, bx, ey, bw, eh, WHITE, RULE, 0.75)
+        rect(sl, bx, ey, 0.07, eh, accent)
+        say(sl, bx + 0.22, ey + 0.10, bw - 0.40, 0.22, title, 11.5, True, accent)
+        iy = ey + 0.36
         for t in items:
             iy += bullet(sl, bx + 0.22, iy, bw - 0.40, t, accent) + 0.06
 
     # --- So What ---
-    rect(sl, L, SW_Y, W, SW_H, BLUE)
-    chip(sl, L + 0.16, SW_Y + 0.07, 1.22, SW_H - 0.14, "So What", DARK, 11.5)
-    say(sl, L + 1.58, SW_Y, W - 1.78, SW_H,
-        "仕組みを作り替える話ではなく、配る文書を「日次バランス」に揃えるだけで"
-        "時間差と拠点の情報格差は解消する",
-        13, True, WHITE, anchor=MSO_ANCHOR.MIDDLE)
+    sy, sh = M["sw_y"], M["sw_h"]
+    rect(sl, L, sy, W, sh, BLUE)
+    chip(sl, L + 0.16, sy + 0.07, 1.22, sh - 0.14, "So What", DARK, 11.5)
+    say(sl, L + 1.58, sy, W - 1.78, sh, T["sowhat"], 13, True, WHITE,
+        anchor=MSO_ANCHOR.MIDDLE)
 
-    say(sl, L, 7.24, 7.0, 0.24, "現状と課題｜需給バランス", 11, False, GREY)
-    say(sl, 12.20, 7.24, 0.72, 0.24, "12", 11, False, GREY, align=PP_ALIGN.RIGHT)
+    fy = M["foot_y"]
+    say(sl, L, fy, 7.5, 0.24, T["foot"], 11, False, GREY)
+    say(sl, 12.20, fy, 0.72, 0.24, "12", 11, False, GREY, align=PP_ALIGN.RIGHT)
 
-    sl.notes_slide.notes_text_frame.text = (
-        "需給バランスの As is / To be。マーケ→生準→拠点という情報の流れ自体は変わらず、"
-        "差分は3者が共有している文書だけなので、流れは1列だけ描いて下に As is と To be の"
-        "共有文書を重ねている。As is ではマーケと生準が月次バランスを共有し、拠点は予算"
-        "レンジ内の予算販売計画しか持たない。そのため生準が販売計画の変化を把握するまでに"
-        "時間差が生じ、拠点はレンジ外の将来案件を投資検討に織り込めない。To be は3者が同じ"
-        "日次バランスを同じ鮮度で見る状態。HQと拠点の双方が予算レンジ外を含む将来需要を"
-        "確認でき、大型案件や数量変動を早期に把握して供給対応を検討できる。")
-
+    sl.notes_slide.notes_text_frame.text = T["notes"]
     prs.save(output)
     print("saved", output)
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("-o", "--output", default="balance_asis_tobe_daicel.pptx")
-    build(ap.parse_args().output)
+    ap.add_argument("--lang", choices=("ja", "en"), default="ja")
+    ap.add_argument("-o", "--output")
+    a = ap.parse_args()
+    build(a.output or "balance_asis_tobe_daicel%s.pptx" %
+          ("" if a.lang == "ja" else "_en"), a.lang)
