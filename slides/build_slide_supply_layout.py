@@ -146,14 +146,14 @@ JA = dict(
 )
 
 EN = dict(
-    eyebrow="2. CURRENT STATE & ISSUES ｜ SUPPLY LAYOUT",
-    headline="Automate supply-layout comparison to evaluate options fast on "
-             "common conditions",
+    eyebrow="2. CURRENT STATE & ISSUES ｜ SUPPLY ALLOCATION",
+    headline="Compare supply-allocation options automatically, on one common "
+             "set of conditions",
     sub="Use the latest supply-demand data to cut manual recalculation and deck "
         "updates, shortening the time comparison takes.",
     proc="Review process",
     steps=["Check supply & demand", "Identify the issue", "Build & compare "
-           "options", "Update supply layout", "Report"],
+           "options", "Update the allocation", "Report"],
     badge="Target of automation",
     issues_head="Issues today", goals_head="Target state",
     rows=[
@@ -170,15 +170,15 @@ EN = dict(
     ],
     sowhat="Remove the rework each condition change triggers and options can be "
            "compared on the same conditions",
-    foot="Current state & issues | Supply layout",
-    notes="Current state and issues for the supply layout. The aim is to "
-          "automate the comparison of supply-layout options so that several can "
-          "be evaluated quickly on common conditions, supporting the choice of a "
-          "supply option. Using the latest supply-demand data cuts the manual "
+    foot="Current state & issues | Supply allocation",
+    notes="Current state and issues for supply allocation - which site "
+          "supplies which demand. The aim is to automate the comparison of "
+          "allocation options so that several can be evaluated quickly on common "
+          "conditions, supporting the choice of a supply option. Using the latest supply-demand data cuts the manual "
           "recalculation and deck updates that every change of conditions "
           "triggers, shortening the time comparison takes. The review process "
           "runs check supply and demand, identify the issue, build and compare "
-          "options, update the supply layout, report; of these, building and "
+          "options, update the allocation, report; of these, building and "
           "comparing options is the target of automation. Today options are "
           "built and compared one by one in Excel so organising and comparing "
           "them takes time, every change of conditions requires a recalculation "
