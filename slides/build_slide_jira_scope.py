@@ -104,43 +104,45 @@ def lines(text, inner_w):
 
 CARDS = [
     dict(no="01", title="PROGRESS & ISSUE MANAGEMENT",
-         desc="Schedule progress and the problems that arise against it.",
+         desc="Schedule commitments and the exceptions raised against them.",
          rows=[
-             ("CONTROL UNIT",
-              "One JIRA issue per key milestone or task, and one per problem"),
-             ("RECORD IN JIRA",
-              "Planned and actual dates, progress and delay status; problem "
-              "impact, response plan, owner and due date"),
-             ("UPDATE",
-              "Monthly by the Category owner; on any status change by the "
-              "originating site"),
-             ("WHEN DELAYED",
-              "Log the cause and the recovery action, then raise the "
-              "cross-functional input or decision needed"),
-             ("STATUS", "Not started / In progress / Resolved"),
+             ("UNIT OF CONTROL",
+              "One issue per milestone or task; one per exception"),
+             ("WHAT IS RECORDED",
+              "Baseline and actual dates, status and slippage; impact, "
+              "countermeasure, owner and due date"),
+             ("UPDATE RHYTHM",
+              "Monthly by the Category owner; on each status change by the "
+              "site"),
+             ("ESCALATION PATH",
+              "Slippage logged with cause and countermeasure, then routed for "
+              "the decision it needs"),
+             ("STATUS MODEL",
+              "Not started / In progress / Done, on one scale across sites"),
          ]),
     dict(no="02", title="EVIDENCE MANAGEMENT",
-         desc="The documents and decisions behind each case, kept on the case "
-              "itself.",
+         desc="The documents and decisions that justify each case.",
          rows=[
-             ("CONTROL UNIT",
-              "One evidence set per issue - no separate folder to look in"),
-             ("RECORD IN JIRA",
-              "Approved documents, minutes and decision records, with version "
-              "and approver"),
+             ("UNIT OF CONTROL",
+              "One evidence set per issue; no parallel folder to maintain"),
+             ("WHAT IS RECORDED",
+              "Approved deliverables, minutes and decision records, with "
+              "version and approver"),
              ("UPDATE TRIGGER",
-              "On approval or revision, by the owning function"),
-             ("WHAT IT SETTLES",
+              "At approval or revision, by the function that owns it"),
+             ("WHAT IT PROVES",
               "Who approved what, when, and on what basis"),
              ("RETENTION",
-              "Held on the issue, so the record travels with the case"),
+              "Held against the issue, so the audit trail stays with the case"),
          ]),
 ]
 
 OUTCOMES = [
-    ("Plan visibility", "Planned dates, progress and actuals, by task."),
-    ("Early issue detection", "Delays, issues and their impact in one place."),
-    ("Decision traceability", "Who decided what, when and on what basis."),
+    ("Plan visibility", "Baseline, progress and actuals, readable by task."),
+    ("Early issue detection", "Slippage and impact surface where work is "
+                              "recorded."),
+    ("Decision traceability", "Every decision carries its owner, date and "
+                              "basis."),
 ]
 
 # --- 版面 ---
@@ -148,7 +150,7 @@ CY, CH = 1.56, 3.76             # カードの天地
 CW = (W - 0.24) / 2
 CX = [L, L + CW + 0.24]
 HDR_H = 0.76
-LBL_W = 1.55
+LBL_W = 1.78
 
 OUT_LBL_Y = 5.46
 TILE_Y, TILE_H = 5.72, 0.76
@@ -208,8 +210,8 @@ def build(output):
         rect(sl, tx, TILE_Y, 0.07, TILE_H, BLUE)
         say(sl, tx + 0.24, TILE_Y + 0.14, tw - 0.44, 0.24, head, 12.5, True,
             DARK)
-        say(sl, tx + 0.24, TILE_Y + 0.42, tw - 0.44, 0.24, body, 11, False,
-            GREY)
+        say(sl, tx + 0.24, TILE_Y + 0.42, tw - 0.44, 0.28, body, 11, False,
+            GREY, space=1.2)
 
     # --- So What ---
     rect(sl, L, SW_Y, W, SW_H, BLUE)
