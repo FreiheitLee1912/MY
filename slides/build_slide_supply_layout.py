@@ -147,10 +147,10 @@ JA = dict(
 
 EN = dict(
     eyebrow="2. CURRENT STATE & ISSUES ｜ SUPPLY ALLOCATION",
-    headline="Supply options are built and compared by hand in Excel, and "
-             "rebuilt on every change",
-    sub="Evaluating options on common data and conditions would cut "
-        "recalculation and deck updates, shortening comparison time.",
+    headline="Comparing supply options is a manual Excel exercise, restarted "
+             "on every change",
+    sub="A shared data set and fixed comparison conditions remove the rework, "
+        "so more options can be tested in the same window.",
     proc="Review process",
     steps=["Check supply & demand", "Identify the issue", "Build & compare "
            "options", "Update the allocation", "Report"],
