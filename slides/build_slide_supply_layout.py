@@ -195,11 +195,16 @@ METRICS = dict(
     en=dict(em=0.085, head_size=18, chev_pad=0.24),
 )
 
+BAND_FILL = C("DCEEF9")        # 自動化対象を括る帯
+
 # --- 版面 ---
-PROC_Y, PROC_H = 1.56, 1.34
-CHEV_Y, CHEV_H = 1.94, 0.50
+# ACNの矢羽根に倣い、両端の工程を大きいシェブロンで囲い、
+# 自動化対象の工程だけハッチの帯で括る。
+PROC_Y = 1.56
+CHEV_Y, CHEV_H = 2.12, 0.56
+OUTER_H = 0.80
 PITCH, CHEV_W = 2.46, 2.56
-BADGE_Y, BADGE_H = 2.52, 0.28
+BAND_Y, BAND_H = 1.86, 0.92
 
 TBL_Y, HEAD_H, ROW_H = 3.00, 0.40, 0.72
 CW, AW = 5.85, 0.80            # 課題／矢印／目指す姿の列幅
@@ -228,27 +233,35 @@ def build(output, lang):
         anchor=MSO_ANCHOR.MIDDLE, face=DISPLAY)
     say(sl, L, 1.20, 12.3, 0.26, T["sub"], 12.5, False, GREY)
 
-    # --- 検討プロセス ---
-    rect(sl, L, PROC_Y, W, PROC_H, FAINT)
-    say(sl, L + 0.22, PROC_Y + 0.10, 3.0, 0.22, T["proc"], 11.5, True, DARK)
+    # --- 検討プロセス（ACNの矢羽根に倣う） ---
+    say(sl, L, PROC_Y, 3.0, 0.22, T["proc"], 11.5, True, DARK)
+
+    last = len(T["steps"]) - 1
+    fx = L + FOCUS * PITCH
+    bx, bw = fx - 0.20, CHEV_W + 0.40
+    rect(sl, bx, BAND_Y, bw, BAND_H, BAND_FILL, BLUE, 0.75)
+    say(sl, bx + 0.06, BAND_Y + 0.05, bw - 0.12, 0.24, T["badge"], 11,
+        True, DARK, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+
     for i, name in enumerate(T["steps"]):
         x = L + i * PITCH
         focus = i == FOCUS
-        ch = rect(sl, x, CHEV_Y, CHEV_W, CHEV_H,
-                  BLUE if focus else WHITE, DARK if focus else RULE,
-                  1.25 if focus else 0.75, MSO_SHAPE.CHEVRON)
+        outer = i in (0, last)
+        h = OUTER_H if outer else CHEV_H
+        y = CHEV_Y + (CHEV_H - h) / 2
+        if outer:
+            fill, line, lw, fg = DARK, None, 0.75, WHITE
+        elif focus:
+            fill, line, lw, fg = BLUE, DARK, 1.25, WHITE
+        else:
+            fill, line, lw, fg = WHITE, RULE, 0.75, INK
+        ch = rect(sl, x, y, CHEV_W, h, fill, line, lw, MSO_SHAPE.CHEVRON)
         # 矢じりを浅くしないと11pt の工程名が入らない
         ch.adjustments[0] = 0.26
-        pad = M["chev_pad"]
-        say(sl, x + pad, CHEV_Y, CHEV_W - pad * 2, CHEV_H, name, 11,
-            focus, WHITE if focus else INK, align=PP_ALIGN.CENTER,
+        pad = M["chev_pad"] + (0.08 if outer else 0)
+        say(sl, x + pad, y, CHEV_W - pad * 2, h, name, 11.5 if outer else 11,
+            True if outer or focus else False, fg, align=PP_ALIGN.CENTER,
             anchor=MSO_ANCHOR.MIDDLE, space=1.1)
-
-    bx = L + FOCUS * PITCH + CHEV_W / 2
-    bw = 0.30 + len(T["badge"]) * M["em"]
-    rect(sl, bx - 0.09, CHEV_Y + CHEV_H - 0.01, 0.18, 0.12, DARK,
-         shape=MSO_SHAPE.ISOSCELES_TRIANGLE).rotation = 180
-    chip(sl, bx - bw / 2, BADGE_Y, bw, BADGE_H, T["badge"], DARK, 11)
 
     # --- 現状の課題 ／ 目指す姿 ---
     chip(sl, L, TBL_Y, CW, HEAD_H, T["issues_head"], RED, 12.5)
