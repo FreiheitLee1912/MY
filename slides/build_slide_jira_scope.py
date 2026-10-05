@@ -176,6 +176,12 @@ def build(output):
         12.5, False, GREY)
 
     # --- 管理対象 ---
+    # 左右のカードで行の罫線位置が揃うよう、各行の高さは2枚のうち高いほうに合わせる
+    vw = CW - 0.40 - LBL_W
+    row_h = [max([lines(c["rows"][i][1], vw) * LH for c in CARDS
+                  if i < len(c["rows"])] + [0.22])
+             for i in range(max(len(c["rows"]) for c in CARDS))]
+
     for card, cx in zip(CARDS, CX):
         rect(sl, cx, CY, CW, CH, WHITE, RULE, 0.75)
         rect(sl, cx, CY, CW, 0.06, BLUE)
@@ -188,16 +194,15 @@ def build(output):
             GREY)
 
         y = CY + HDR_H + 0.14
-        vw = CW - 0.40 - LBL_W
         for i, (label, value) in enumerate(card["rows"]):
-            h = lines(value, vw) * LH
+            h = row_h[i]
             if i:
                 rect(sl, cx + 0.20, y - 0.09, CW - 0.40, 0.01, RULE)
             say(sl, cx + 0.20, y, LBL_W, 0.22, label, 11, True, DARK,
                 spacing=0.5, space=1.25)
             say(sl, cx + 0.20 + LBL_W, y, vw, h, value, 11, False, INK,
                 space=1.25)
-            y += max(h, 0.22) + 0.16
+            y += h + 0.16
 
     # --- JIRA で何が取れるか ---
     say(sl, L, OUT_LBL_Y, 4.0, 0.22, "JIRA OUTCOMES", 11.5, True, DARK,
