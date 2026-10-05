@@ -1,0 +1,224 @@
+# -*- coding: utf-8 -*-
+"""現状と課題｜供給レイアウト — 供給案比較の自動化。
+
+Usage:
+    python build_slide_supply_layout.py [-o out.pptx]
+
+上段に検討プロセス（5工程、自動化対象の「供給案の作成・比較」を強調）、
+下段に現状の課題と目指す姿を1行ずつ対で並べる。
+"""
+import argparse
+import math
+
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.oxml.ns import qn
+
+
+def C(h):
+    return RGBColor(int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16))
+
+
+BLUE = C("0096D8")
+DARK = C("00558C")
+PALE = C("E5F4FC")
+RED = C("C00000")
+RED_FILL = C("FBEAEA")
+INK = C("1F2937")
+GREY = C("6B7280")
+SLATE = C("7F7F7F")
+FAINT = C("F4F5F3")
+RULE = C("D0D5DD")
+WHITE = C("FFFFFF")
+
+JP = "Meiryo"
+L, R = 0.42, 12.92
+W = R - L
+
+EM11 = 0.158          # 11pt Meiryo の折り返し見積り（安全側）
+LH11 = 0.20           # 11pt / 行送り1.25 の1行
+
+
+def style(run, size, bold=False, color=INK, face=JP, spacing=None):
+    f = run.font
+    f.size, f.bold, f.name = Pt(size), bold, face
+    f.color.rgb = color
+    rPr = run._r.get_or_add_rPr()
+    if spacing is not None:
+        rPr.set("spc", str(int(spacing * 100)))
+    for tag in ("a:ea", "a:cs"):
+        el = rPr.find(qn(tag))
+        if el is None:
+            el = rPr.makeelement(qn(tag), {}); rPr.append(el)
+        el.set("typeface", face)
+
+
+def say(sl, x, y, w, h, text, size, bold=False, color=INK, align=PP_ALIGN.LEFT,
+        anchor=MSO_ANCHOR.TOP, space=None, spacing=None):
+    tb = sl.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+    tf = tb.text_frame
+    tf.word_wrap = True
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    tf.vertical_anchor = anchor
+    for i, ln in enumerate(text.split("\n")):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.alignment = align
+        if space:
+            p.line_spacing = space
+        r = p.add_run(); r.text = ln
+        style(r, size, bold, color, spacing=spacing)
+    return tf
+
+
+def rect(sl, x, y, w, h, fill, outline=None, ow=1.0, shape=MSO_SHAPE.RECTANGLE):
+    sh = sl.shapes.add_shape(shape, Inches(x), Inches(y), Inches(w), Inches(h))
+    if fill is None:
+        sh.fill.background()
+    else:
+        sh.fill.solid(); sh.fill.fore_color.rgb = fill
+    if outline is None:
+        sh.line.fill.background()
+    else:
+        sh.line.color.rgb = outline; sh.line.width = Pt(ow)
+    sh.shadow.inherit = False
+    sh.text_frame.word_wrap = True
+    return sh
+
+
+def chip(sl, x, y, w, h, text, fill, size=11, fg=WHITE, outline=None, ow=1.0,
+         shape=MSO_SHAPE.RECTANGLE):
+    sh = rect(sl, x, y, w, h, fill, outline, ow, shape)
+    tf = sh.text_frame
+    tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
+    r = p.add_run(); r.text = text
+    style(r, size, True, fg)
+    return sh
+
+
+def lines(text, inner_w):
+    return max(1, math.ceil(len(text) / max(6, int(inner_w / EM11))))
+
+
+STEPS = ["需給状況の確認", "課題の特定", "供給案の作成・比較",
+         "供給レイアウトの更新", "報告"]
+FOCUS = 2                      # 自動化対象の工程
+BADGE = "比較作業の自動化対象"
+
+ROWS = [
+    ("Excelで供給案を個別に作成・比較しており、情報の整理と比較に時間がかかる",
+     "共通のデータと比較条件で、複数の供給案を評価できる"),
+    ("条件変更のたびに、再計算と比較資料の更新が必要になる",
+     "条件変更を比較結果に反映し、更新作業を削減できる"),
+    ("手入力・手計算に伴うミスのリスクがある",
+     "入力・計算の手作業を減らし、ミスのリスクを低減できる"),
+    ("作業負荷により、比較できるパターンが限られる",
+     "複数のシナリオを比較し、各案の差分を確認できる"),
+]
+
+# --- 版面 ---
+PROC_Y, PROC_H = 1.56, 1.34
+CHEV_Y, CHEV_H = 1.94, 0.50
+PITCH, CHEV_W = 2.46, 2.56
+BADGE_Y, BADGE_H = 2.52, 0.28
+
+TBL_Y, HEAD_H, ROW_H = 3.00, 0.40, 0.72
+CW, AW = 5.85, 0.80            # 課題／矢印／目指す姿の列幅
+AX = L + CW
+RX = AX + AW
+
+SW_Y, SW_H = 6.66, 0.52
+FOOT_Y = 7.24
+
+
+def build(output):
+    prs = Presentation()
+    prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
+    sl = prs.slides.add_slide(prs.slide_layouts[6])
+
+    # --- ヘッダー ---
+    say(sl, L, 0.36, 10.5, 0.26, "② 現状と課題 ｜ 供給レイアウト", 11.5, True,
+        BLUE, spacing=1.0)
+    say(sl, L, 0.62, W, 0.56,
+        "供給レイアウト候補の比較を自動化し、共通条件で複数案を迅速に評価して選定を支援する",
+        20, True, INK, anchor=MSO_ANCHOR.MIDDLE)
+    say(sl, L, 1.20, 12.3, 0.26,
+        "最新の需給情報を活用し、条件変更に伴う再計算・資料更新の手作業を削減することで、"
+        "比較検討にかかる時間を短縮する。",
+        12.5, False, GREY)
+
+    # --- 検討プロセス ---
+    rect(sl, L, PROC_Y, W, PROC_H, FAINT)
+    say(sl, L + 0.22, PROC_Y + 0.10, 3.0, 0.22, "検討プロセス", 11.5, True, DARK)
+    for i, name in enumerate(STEPS):
+        x = L + i * PITCH
+        focus = i == FOCUS
+        ch = rect(sl, x, CHEV_Y, CHEV_W, CHEV_H,
+                  BLUE if focus else WHITE, DARK if focus else RULE,
+                  1.25 if focus else 0.75, MSO_SHAPE.CHEVRON)
+        # 矢じりを浅くしないと11pt の工程名が入らない
+        ch.adjustments[0] = 0.26
+        say(sl, x + 0.30, CHEV_Y, CHEV_W - 0.60, CHEV_H, name, 11,
+            focus, WHITE if focus else INK, align=PP_ALIGN.CENTER,
+            anchor=MSO_ANCHOR.MIDDLE)
+
+    bx = L + FOCUS * PITCH + CHEV_W / 2
+    bw = 0.30 + len(BADGE) * 0.153
+    rect(sl, bx - 0.09, CHEV_Y + CHEV_H - 0.01, 0.18, 0.12, DARK,
+         shape=MSO_SHAPE.ISOSCELES_TRIANGLE).rotation = 180
+    chip(sl, bx - bw / 2, BADGE_Y, bw, BADGE_H, BADGE, DARK, 11)
+
+    # --- 現状の課題 ／ 目指す姿 ---
+    chip(sl, L, TBL_Y, CW, HEAD_H, "現状の課題", RED, 12.5)
+    chip(sl, RX, TBL_Y, CW, HEAD_H, "目指す姿", DARK, 12.5)
+
+    y = TBL_Y + HEAD_H + 0.06
+    for i, (issue, goal) in enumerate(ROWS, 1):
+        rect(sl, L, y, CW, ROW_H, WHITE, RULE, 0.75)
+        rect(sl, RX, y, CW, ROW_H, PALE, RULE, 0.75)
+        chip(sl, L + 0.16, y + (ROW_H - 0.28) / 2, 0.30, 0.28, str(i), RED, 11)
+        ih = lines(issue, CW - 0.80) * LH11
+        say(sl, L + 0.58, y + (ROW_H - ih) / 2, CW - 0.80, ih, issue, 11, False,
+            INK, space=1.25)
+        gh = lines(goal, CW - 0.44) * LH11
+        say(sl, RX + 0.22, y + (ROW_H - gh) / 2, CW - 0.44, gh, goal, 11, True,
+            DARK, space=1.25)
+        rect(sl, AX + (AW - 0.42) / 2, y + (ROW_H - 0.22) / 2, 0.42, 0.22, BLUE,
+             shape=MSO_SHAPE.RIGHT_ARROW)
+        y += ROW_H + 0.06
+
+    # --- So What ---
+    rect(sl, L, SW_Y, W, SW_H, BLUE)
+    chip(sl, L + 0.16, SW_Y + 0.07, 1.22, SW_H - 0.14, "So What", DARK, 11.5)
+    say(sl, L + 1.58, SW_Y, W - 1.78, SW_H,
+        "条件変更のたびの再計算と資料更新をなくせば、同じ条件で複数案を並べて比べられる",
+        13, True, WHITE, anchor=MSO_ANCHOR.MIDDLE)
+
+    say(sl, L, FOOT_Y, 7.5, 0.24, "現状と課題｜供給レイアウト", 11, False, GREY)
+    say(sl, 12.20, FOOT_Y, 0.72, 0.24, "13", 11, False, GREY,
+        align=PP_ALIGN.RIGHT)
+
+    sl.notes_slide.notes_text_frame.text = (
+        "供給レイアウトの現状と課題。狙いは供給レイアウト候補の比較を自動化し、共通条件で"
+        "複数案を迅速に評価して供給案の選定を支援すること。最新の需給情報を活用し、条件変更に"
+        "伴う再計算・資料更新の手作業を削減することで、比較検討にかかる時間を短縮する。"
+        "検討プロセスは需給状況の確認、課題の特定、供給案の作成・比較、供給レイアウトの更新、"
+        "報告の5工程で、このうち「供給案の作成・比較」が比較作業の自動化対象。現状はExcelで"
+        "供給案を個別に作成・比較しており情報の整理と比較に時間がかかる、条件変更のたびに"
+        "再計算と比較資料の更新が必要、手入力・手計算のミスのリスクがある、作業負荷により"
+        "比較できるパターンが限られる、の4点。目指す姿は共通のデータと比較条件で複数案を"
+        "評価でき、条件変更を比較結果に反映して更新作業を削減し、手作業を減らしてミスの"
+        "リスクを下げ、複数シナリオの差分を確認できる状態。")
+
+    prs.save(output)
+    print("saved", output)
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-o", "--output", default="supply_layout_daicel.pptx")
+    build(ap.parse_args().output)
