@@ -112,10 +112,10 @@ FOCUS = 2                      # 自動化対象の工程
 
 JA = dict(
     eyebrow="② 現状と課題 ｜ 供給レイアウト",
-    headline="供給レイアウト候補の比較を自動化し、共通条件で複数案を迅速に評価して"
-             "選定を支援する",
-    sub="最新の需給情報を活用し、条件変更に伴う再計算・資料更新の手作業を削減することで、"
-        "比較検討にかかる時間を短縮する。",
+    headline="いまは供給案をExcelで1案ずつ作って比べており、条件が変わるたびに"
+             "作り直している",
+    sub="共通のデータと比較条件で複数案を自動で評価できるようにし、再計算・資料更新の"
+        "手作業を減らして比較検討にかかる時間を短縮する。",
     proc="検討プロセス",
     steps=["需給状況の確認", "課題の特定", "供給案の作成・比較",
            "供給レイアウトの更新", "報告"],
@@ -147,10 +147,10 @@ JA = dict(
 
 EN = dict(
     eyebrow="2. CURRENT STATE & ISSUES ｜ SUPPLY ALLOCATION",
-    headline="Compare supply-allocation options automatically, on one common "
-             "set of conditions",
-    sub="Use the latest supply-demand data to cut manual recalculation and deck "
-        "updates, shortening the time comparison takes.",
+    headline="Supply options are built and compared by hand in Excel, and "
+             "rebuilt on every change",
+    sub="Evaluating options on common data and conditions would cut "
+        "recalculation and deck updates, shortening comparison time.",
     proc="Review process",
     steps=["Check supply & demand", "Identify the issue", "Build & compare "
            "options", "Update the allocation", "Report"],
