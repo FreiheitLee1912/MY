@@ -173,14 +173,9 @@ SITES = [("HQ", "14", "要確認", "要確認"),
 SITE_COLS = [("拠点", 2.20), ("現在の有償アカウント数", 3.20),
              ("展開後の利用予定人数 ※", 3.40), ("Guest利用候補人数", 3.70)]
 
-PRICE_ROWS = [("［人数帯］", "［　］", "［　］"),
-              ("［人数帯］", "［　］", "［　］"),
-              ("［人数帯］", "［　］", "［　］")]
-PRICE_COLS = [("人数帯", 2.05), ("現行 月額単価", 2.04), ("改定後 月額単価", 2.04)]
-
-CASES = [("現在人数 × 現行価格", "現在の費用水準"),
-         ("展開後人数 × 改定価格", "全員を有償とした場合の費用"),
-         ("Guest活用後 × 改定価格", "Guestへの振り分けによる削減余地")]
+PRICE_COLS = [("人数帯（ユーザー数）", 3.40), ("現行 月額単価", 2.90),
+              ("改定後 月額単価", 2.90), ("増減", 3.30)]
+PRICE_ROWS = [("［人数帯］", "［　］", "［　］", "［　］") for _ in range(5)]
 
 
 def page1(prs):
@@ -271,66 +266,43 @@ def page2(prs):
         "※ Guest候補を含む総利用人数。Guestの適用確認後、有償人数を確定する。",
         11, False, GREY)
 
-    # ②③ 下段
-    py, ph = 4.24, 1.96
-    pw = (W - 0.24) / 2
-    px = [L, L + pw + 0.24]
+    # ② 参考価格
+    say(sl, L, 4.26, 8.0, 0.22,
+        "② Jira Standard の参考価格（USD／人・月）", 11.5, True, DARK)
+    say(sl, 7.20, 4.26, 5.72, 0.22,
+        "出典：Atlassian 公式価格表（Cloud / List）", 11, False, GREY,
+        align=PP_ALIGN.RIGHT)
 
-    rect(sl, px[0], py, pw, ph, WHITE, RULE, 0.75)
-    chip(sl, px[0], py, pw, 0.34, "② Jira Standard の参考価格（USD／人・月）",
-         DARK, 11.5)
-    x = px[0] + 0.14
+    py, hh, rh = 4.52, 0.30, 0.27
+    x = L
     for name, cwid in PRICE_COLS:
-        rect(sl, x, py + 0.44, cwid, 0.28, PALE, RULE, 0.75)
-        say(sl, x, py + 0.44, cwid, 0.28, name, 11, True, DARK,
-            align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+        chip(sl, x, py, cwid - 0.02, hh, name, DARK, 11)
         x += cwid
-    ry = py + 0.72
+    y = py + hh
     for row in PRICE_ROWS:
-        x = px[0] + 0.14
-        for val, (_, cwid) in zip(row, PRICE_COLS):
-            rect(sl, x, ry, cwid, 0.26, WHITE, RULE, 0.75)
-            say(sl, x, ry, cwid, 0.26, val, 11, False, AMBER,
-                align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+        x = L
+        for j, (val, (_, cwid)) in enumerate(zip(row, PRICE_COLS)):
+            rect(sl, x, y, cwid - 0.02, rh,
+                 AMBER_FILL if j else PALE, RULE, 0.75)
+            say(sl, x, y, cwid - 0.02, rh, val, 11, j == 0,
+                DARK if j == 0 else AMBER, align=PP_ALIGN.CENTER,
+                anchor=MSO_ANCHOR.MIDDLE)
             x += cwid
-        ry += 0.26
-    say(sl, px[0] + 0.14, ry + 0.08, pw - 0.28,
-        0.42, "月額は人数帯ごとの累進計算。各人数帯の人数に単価を掛けて合算する。",
-        11, False, GREY, space=1.2)
+        y += rh
 
-    rect(sl, px[1], py, pw, ph, WHITE, RULE, 0.75)
-    chip(sl, px[1], py, pw, 0.34, "③ 人数回答後に比較する3ケース", DARK, 11.5)
-    rect(sl, px[1] + 0.14, py + 0.44, 2.60, 0.28, PALE, RULE, 0.75)
-    rect(sl, px[1] + 2.74, py + 0.44, pw - 2.88, 0.28, PALE, RULE, 0.75)
-    say(sl, px[1] + 0.14, py + 0.44, 2.60, 0.28, "比較ケース", 11, True, DARK,
-        align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-    say(sl, px[1] + 2.74, py + 0.44, pw - 2.88, 0.28, "確認すること", 11, True,
-        DARK, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-    ry = py + 0.72
-    for i, (case, check) in enumerate(CASES):
-        last = i == len(CASES) - 1
-        rect(sl, px[1] + 0.14, ry, 2.60, 0.30,
-             GREEN_PALE if last else WHITE, RULE, 0.75)
-        rect(sl, px[1] + 2.74, ry, pw - 2.88, 0.30,
-             GREEN_PALE if last else WHITE, RULE, 0.75)
-        say(sl, px[1] + 0.22, ry, 2.44, 0.30, case, 11, True,
-            GREEN if last else DARK, anchor=MSO_ANCHOR.MIDDLE)
-        say(sl, px[1] + 2.84, ry, pw - 3.08, 0.30, check, 11, False, INK,
-            anchor=MSO_ANCHOR.MIDDLE)
-        ry += 0.30
-    say(sl, px[1] + 0.14, ry + 0.08, pw - 0.28, 0.42,
-        "比較金額は各拠点の回答後に記載する。", 11, False, GREY, space=1.2)
+    say(sl, L, y + 0.06, 12.0, 0.22,
+        "月額は人数帯ごとの累進計算。各人数帯の人数に単価を掛けて合算する。",
+        11, False, GREY)
 
-    rect(sl, L, 6.26, W, 0.30, FAINT)
-    rich(sl, L + 0.16, 6.26, W - 0.32, 0.30,
+    rect(sl, L, 6.52, W, 0.46, FAINT)
+    rich(sl, L + 0.16, 6.52, W - 0.32, 0.46,
          [("試算条件｜", 11, True, DARK),
-          ("改定価格は2026年10月13日（太平洋時間）から適用。5拠点を1契約に集約する"
-           "前提で試算し、Guestの適用条件と最終費用は代理店に確認する。", 11,
-           False, GREY)], anchor=MSO_ANCHOR.MIDDLE)
+          ("改定価格は2026年10月13日（太平洋時間）から適用。代理店によれば現行比"
+           "15%程度の上昇。5拠点を1契約に集約する前提で試算し、Guestの適用条件と"
+           "最終費用は代理店に確認する。", 11, False, GREY)],
+         anchor=MSO_ANCHOR.MIDDLE, space=1.15)
 
-    sowhat(sl, 6.66, 0.46,
-           "人数が揃えば、3ケースの差額でGuest活用の効果をそのまま金額で示せる")
-    foot(sl, 7.18, "費用比較 ｜ 必要人数の集約", "2")
+    foot(sl, 7.10, "費用比較 ｜ 必要人数の集約", "2")
 
     sl.notes_slide.notes_text_frame.text = (
         "現在はHQとDSSEで利用しており、今後はDSST・DSSC・DSSAへの展開を予定しています。"
